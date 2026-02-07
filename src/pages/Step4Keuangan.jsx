@@ -3,7 +3,7 @@ import FormSection from '../components/FormSection';
 import Input from '../components/Input';
 import Select from '../components/Select';
 
-const Step4Keuangan = ({ data = {}, updateData }) => {
+const Step4Keuangan = ({ data = {}, updateData, errors = {} }) => {
     // Local state for checking status
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -109,15 +109,15 @@ const Step4Keuangan = ({ data = {}, updateData }) => {
                         placeholder=""
                         disabled={true}
                         value={data.namaPemilik || ''}
-                    // Read-only/Auto-filled
                     />
+                    {errors.namaPemilikRekening && <p className="text-red-500 text-sm -mt-3 mb-3">{errors.namaPemilikRekening}</p>}
                     <Input
                         label="Kode Cabang Rekening"
                         placeholder=""
                         disabled={true}
                         value={data.kodeCabang || ''}
-                    // Read-only/Auto-filled
                     />
+                    {errors.kodeCabangRekening && <p className="text-red-500 text-sm -mt-3 mb-3">{errors.kodeCabangRekening}</p>}
                 </div>
                 <div>
                     <Input
@@ -125,8 +125,8 @@ const Step4Keuangan = ({ data = {}, updateData }) => {
                         placeholder=""
                         disabled={true}
                         value={data.tipeRekening || ''}
-                    // Read-only/Auto-filled
                     />
+                    {errors.tipeRekening && <p className="text-red-500 text-sm -mt-3 mb-3">{errors.tipeRekening}</p>}
                     <Select
                         label="Status Kepemilikan"
                         required={true}
@@ -137,6 +137,7 @@ const Step4Keuangan = ({ data = {}, updateData }) => {
                         ]}
                         value={data.statusKepemilikan || ''}
                         onChange={(e) => handleInputChange('statusKepemilikan', e.target.value)}
+                        error={errors.statusKepemilikan}
                     />
                 </div>
             </div>

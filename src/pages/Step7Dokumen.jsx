@@ -177,22 +177,26 @@ const DokumenLainnyaUpload = ({ files, onAdd, onRemove, max = 5 }) => {
     );
 };
 
-const Step7Dokumen = () => {
-    const [singleFiles, setSingleFiles] = useState({
-        ktp: null,
-        npwp: null,
-        qris: null,
-        form: null
-    });
+const Step7Dokumen = ({ data = {}, updateData, errors = {} }) => {
 
-    const [multiFiles, setMultiFiles] = useState({
-        tampakDepan: [],
-        barangJasa: [],
-        dokumenLainnya: []
-    });
+    // Helpers to handle file state in parent data
+    // Single files are stored as [file] to satisfy validator expectation of array/length
+    // or we can change validator. But let's stick to array for consistency if validator implies it.
+    // Actually, looking at validation.js, it checks .length > 0.
+
+    // Helper to get single file from data (which might be array)
+    const getSingleFile = (key) => {
+        const val = data[key];
+        if (Array.isArray(val) && val.length > 0) return val[0];
+        return null;
+    };
 
     const handleSingleFile = (key, file) => {
-        setSingleFiles(prev => ({ ...prev, [key]: file }));
+        updateData({ [key]: [file] });
+    };
+
+    const getMultiFiles = (key) => {
+        return Array.isArray(data[key]) ? data[key] : [];
     };
 
     const handleAddMulti = (key, file, customTitle = "") => {
@@ -202,17 +206,17 @@ const Step7Dokumen = () => {
             file: file,
             customTitle
         };
-        setMultiFiles(prev => ({
-            ...prev,
-            [key]: [...prev[key], fileObj]
-        }));
+        const currentFiles = getMultiFiles(key);
+        updateData({
+            [key]: [...currentFiles, fileObj]
+        });
     };
 
     const handleRemoveMulti = (key, index) => {
-        setMultiFiles(prev => ({
-            ...prev,
-            [key]: prev[key].filter((_, i) => i !== index)
-        }));
+        const currentFiles = getMultiFiles(key);
+        updateData({
+            [key]: currentFiles.filter((_, i) => i !== index)
+        });
     };
 
     return (
@@ -221,21 +225,24 @@ const Step7Dokumen = () => {
                 label="Foto KTP Pemilik/Pengurus"
                 required={true}
                 subtext="Format file yang dapat diproses adalah .pdf/.png/.jpg dan Ukuran file maksimum sebesar 2MB."
-                file={singleFiles.ktp}
-                onChange={(e) => handleSingleFile('ktp', e.target.files[0])}
+                file={getSingleFile('fotoKTP')}
+                onChange={(e) => handleSingleFile('fotoKTP', e.target.files[0])}
             />
+            {errors.fotoKTP && <p className="text-red-500 text-sm -mt-4 mb-4">{errors.fotoKTP}</p>}
 
             <FileInput
                 label="Foto NPWP"
+                required={true}
                 subtext="Format file yang dapat diproses adalah .pdf/.png/.jpg dan Ukuran file maksimum sebesar 2MB."
-                file={singleFiles.npwp}
-                onChange={(e) => handleSingleFile('npwp', e.target.files[0])}
+                file={getSingleFile('fotoNPWP')}
+                onChange={(e) => handleSingleFile('fotoNPWP', e.target.files[0])}
             />
+            {errors.fotoNPWP && <p className="text-red-500 text-sm -mt-4 mb-4">{errors.fotoNPWP}</p>}
 
             <MultiFileUpload
                 label="Foto Tampak Depan Tempat Usaha"
                 subtext="Format file yang dapat diproses adalah .pdf/.png/.jpg dan Ukuran file maksimum sebesar 2MB."
-                files={multiFiles.tampakDepan}
+                files={getMultiFiles('tampakDepan')}
                 onAdd={(file) => handleAddMulti('tampakDepan', file)}
                 onRemove={(index) => handleRemoveMulti('tampakDepan', index)}
             />
@@ -243,7 +250,7 @@ const Step7Dokumen = () => {
             <MultiFileUpload
                 label="Foto Barang/Jasa yang dijual"
                 subtext="Format file yang dapat diproses adalah .pdf/.png/.jpg dan Ukuran file maksimum sebesar 2MB."
-                files={multiFiles.barangJasa}
+                files={getMultiFiles('barangJasa')}
                 onAdd={(file) => handleAddMulti('barangJasa', file)}
                 onRemove={(index) => handleRemoveMulti('barangJasa', index)}
             />
@@ -251,7 +258,7 @@ const Step7Dokumen = () => {
             <FileInput
                 label="Foto QRIS Lama (jika sudah pernah punya)"
                 subtext="Format file yang dapat diproses adalah .pdf/.png/.jpg dan Ukuran file maksimum sebesar 2MB."
-                file={singleFiles.qris}
+                file={getSingleFile('qris')}
                 onChange={(e) => handleSingleFile('qris', e.target.files[0])}
             />
 
@@ -259,12 +266,13 @@ const Step7Dokumen = () => {
                 label="Formulir Permohonan & Syarat Ketentuan (TTD)"
                 required={true}
                 subtext="Format file yang dapat diproses adalah .pdf/.png/.jpg dan Ukuran file maksimum sebesar 2MB."
-                file={singleFiles.form}
-                onChange={(e) => handleSingleFile('form', e.target.files[0])}
+                file={getSingleFile('formulirPermohonan')}
+                onChange={(e) => handleSingleFile('formulirPermohonan', e.target.files[0])}
             />
+            {errors.formulirPermohonan && <p className="text-red-500 text-sm -mt-4 mb-4">{errors.formulirPermohonan}</p>}
 
             <DokumenLainnyaUpload
-                files={multiFiles.dokumenLainnya}
+                files={getMultiFiles('dokumenLainnya')}
                 onAdd={(file, title) => handleAddMulti('dokumenLainnya', file, title)}
                 onRemove={(index) => handleRemoveMulti('dokumenLainnya', index)}
             />

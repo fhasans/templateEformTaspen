@@ -36,6 +36,11 @@ const Stepper = ({ currentStep }) => {
                         {isActive && (
                             <div className="absolute -bottom-3 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-[#1e3a8a]"></div>
                         )}
+
+                        {/* Label */}
+                        <span className={`text-[10px] mt-1 font-medium ${isActive ? 'text-[#1e3a8a]' : 'text-gray-400'}`}>
+                            {step.label}
+                        </span>
                     </div>
                 );
             })}

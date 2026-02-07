@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaChevronDown } from 'react-icons/fa';
 
-const Select = ({ label, required, options = [], ...props }) => {
+const Select = ({ label, required, options = [], error, ...props }) => {
     return (
         <div className="mb-4">
             {label && (
@@ -11,7 +11,7 @@ const Select = ({ label, required, options = [], ...props }) => {
             )}
             <div className="relative">
                 <select
-                    className={`w-full px-3 py-2 border border-gray-300 rounded text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none ${props.className || ''}`}
+                    className={`w-full px-3 py-2 border ${error ? 'border-red-500' : 'border-gray-300'} rounded text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none ${props.className || ''}`}
                     {...props}
                 >
                     {options.map((opt, idx) => (
@@ -24,6 +24,7 @@ const Select = ({ label, required, options = [], ...props }) => {
                     <FaChevronDown size={12} />
                 </div>
             </div>
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
         </div>
     );
 };

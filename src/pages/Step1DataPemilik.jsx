@@ -32,6 +32,33 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
         updateData({ [field]: value });
     };
 
+    // Initialize defaults for fields that have visual defaults
+    React.useEffect(() => {
+        const defaults = {
+            provinsi: 'dki_jakarta',
+            kabKota: 'jakarta_barat',
+            kecamatan: 'kebon_jeruk',
+            kelurahan: 'kebon_jeruk',
+            kodePos: '11530',
+            // Also Initialize optional fields that appear selected if needed, 
+            // but strict validation only cares about required ones.
+            // jenisIdentitas defaults to 'ktp' visually but is not mandatory in validation.js? 
+            // actually logic says mandatory: no.
+        };
+
+        const updates = {};
+        Object.keys(defaults).forEach(key => {
+            if (!data[key]) {
+                updates[key] = defaults[key];
+            }
+        });
+
+        if (Object.keys(updates).length > 0) {
+            updateData(updates);
+        }
+    }, []); // Run once on mount
+
+
     return (
         <div>
             {/* Pre-Formulir Section */}
@@ -49,14 +76,14 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                 />
                 <RadioGroup
                     label="Tipe Layanan QRIS"
-                    name="tipeLayanan"
+                    name="tipeLayananQRIS"
                     required
                     options={[
                         { value: 'statis', label: 'QRIS Statis' },
                         { value: 'dinamis', label: 'QRIS Dinamis' },
                     ]}
-                    value={data.tipeLayanan || ''}
-                    onChange={(val) => handleChange('tipeLayanan', val)}
+                    value={data.tipeLayananQRIS || ''}
+                    onChange={(val) => handleChange('tipeLayananQRIS', val)}
                 />
             </FormSection>
 
