@@ -59,23 +59,25 @@ describe('MerchantForm Orchestrator', () => {
     it('navigates to next step when validation passes', async () => {
         // Mock validation to pass
         validateStep.mockImplementation((step, data) => {
-            console.log(`[TEST-DEBUG] Mock validateStep called for step ${step}`);
             return {};
         });
 
         render(<MerchantForm />);
-
         const nextButton = screen.getByText('Simpan dan Lanjut');
-        console.log('[TEST-DEBUG] Clicking Next Button');
+
+        // Use act to ensure state updates are processed
         fireEvent.click(nextButton);
 
-        expect(validateStep).toHaveBeenCalled();
-        console.log('[TEST-DEBUG] Next Button Clicked');
-
+        // Wait for validation to be called first
         await waitFor(() => {
-            expect(screen.getByText('Step 2 Data Pemilik')).toBeInTheDocument();
-            expect(sessionStorage.setItem).toHaveBeenCalledWith('merchantFormStep', '2');
+            expect(validateStep).toHaveBeenCalled();
         });
+
+        // Did we move to Step 2?
+        await waitFor(() => {
+            expect(sessionStorage.setItem).toHaveBeenCalledWith('merchantFormStep', 2);
+            expect(screen.getByText('Step 2 Data Pemilik')).toBeInTheDocument();
+        }, { timeout: 2000 });
     });
 
     it('stays on current step if validation fails', async () => {
