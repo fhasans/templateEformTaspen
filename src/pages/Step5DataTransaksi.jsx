@@ -1,10 +1,13 @@
 import React from 'react';
 import FormSection from '../components/FormSection';
 import Input from '../components/Input';
+import { formatCurrency, parseCurrency } from '../utils/currencyFormatter';
 
 const Step5DataTransaksi = ({ data = {}, updateData, errors = {} }) => {
     const handleChange = (field, value) => {
-        updateData({ [field]: value });
+        // For currency fields, parse the formatted value to store raw numbers
+        const rawValue = parseCurrency(value);
+        updateData({ [field]: rawValue });
     };
 
     return (
@@ -15,14 +18,14 @@ const Step5DataTransaksi = ({ data = {}, updateData, errors = {} }) => {
                     label="Sales Volume per Tahun"
                     required={true}
                     placeholder="1.200.000.000"
-                    value={data.salesVolumePerTahun || ''}
+                    value={formatCurrency(data.salesVolumePerTahun || '')}
                     onChange={(e) => handleChange('salesVolumePerTahun', e.target.value)}
                     error={errors.salesVolumePerTahun}
                 />
                 <Input
                     label="Komitmen Sales Volume (Bulanan)"
                     placeholder="120.000.000"
-                    value={data.komitmenSalesVolume || ''}
+                    value={formatCurrency(data.komitmenSalesVolume || '')}
                     onChange={(e) => handleChange('komitmenSalesVolume', e.target.value)}
                 />
             </div>
@@ -32,13 +35,13 @@ const Step5DataTransaksi = ({ data = {}, updateData, errors = {} }) => {
                 <Input
                     label="Rata-rata Nominal per Transaksi"
                     placeholder="250.000"
-                    value={data.rataRataNominal || ''}
+                    value={formatCurrency(data.rataRataNominal || '')}
                     onChange={(e) => handleChange('rataRataNominal', e.target.value)}
                 />
                 <Input
                     label="Komitmen Saldo Mengendap"
                     placeholder="50.000.000"
-                    value={data.komitmenSaldoMengendap || ''}
+                    value={formatCurrency(data.komitmenSaldoMengendap || '')}
                     onChange={(e) => handleChange('komitmenSaldoMengendap', e.target.value)}
                 />
                 <Input

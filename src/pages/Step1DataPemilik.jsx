@@ -3,7 +3,7 @@ import FormSection from '../components/FormSection';
 import Input from '../components/Input';
 import Select from '../components/Select';
 
-const RadioGroup = ({ label, name, options, required, value, onChange }) => (
+const RadioGroup = ({ label, name, options, required, value, onChange, error }) => (
     <div className="mb-6">
         <label className="block text-gray-900 font-bold mb-2 text-sm">
             {label} {required && <span className="text-red-600">*</span>}
@@ -23,10 +23,11 @@ const RadioGroup = ({ label, name, options, required, value, onChange }) => (
                 </label>
             ))}
         </div>
+        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
 );
 
-const Step1DataPemilik = ({ data = {}, updateData }) => {
+const Step1DataPemilik = ({ data = {}, updateData, errors = {} }) => {
 
     const handleChange = (field, value) => {
         updateData({ [field]: value });
@@ -73,6 +74,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                     ]}
                     value={data.tipeNasabah || ''}
                     onChange={(val) => handleChange('tipeNasabah', val)}
+                    error={errors.tipeNasabah}
                 />
                 <RadioGroup
                     label="Tipe Layanan QRIS"
@@ -84,6 +86,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                     ]}
                     value={data.tipeLayananQRIS || ''}
                     onChange={(val) => handleChange('tipeLayananQRIS', val)}
+                     error={errors.tipeLayananQRIS}
                 />
             </FormSection>
 
@@ -99,6 +102,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         ]}
                         value={data.jenisIdentitas || ''}
                         onChange={(e) => handleChange('jenisIdentitas', e.target.value)}
+                        error={errors.jenisIdentitas}
                     />
                     <Input
                         label="Nomor Identitas"
@@ -106,6 +110,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         placeholder="3175091203980004"
                         value={data.nomorIdentitas || ''}
                         onChange={(e) => handleChange('nomorIdentitas', e.target.value)}
+                        error={errors.nomorIdentitas}
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -116,6 +121,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         subtext="Wajib sesuai kartu identitas"
                         value={data.namaPemilik || ''}
                         onChange={(e) => handleChange('namaPemilik', e.target.value)}
+                        error={errors.namaPemilik}
                     />
                     <Input
                         label="No HP Pemilik/Pengurus"
@@ -123,6 +129,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         placeholder="081234567890"
                         value={data.noHpPemilik || ''}
                         onChange={(e) => handleChange('noHpPemilik', e.target.value)}
+                        error={errors.noHpPemilik}
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -131,6 +138,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         placeholder=""
                         value={data.npwpPemilik || ''}
                         onChange={(e) => handleChange('npwpPemilik', e.target.value)}
+                        error={errors.npwpPemilik}
                     />
                 </div>
             </FormSection>
@@ -144,6 +152,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                     className="mb-4"
                     value={data.alamat || ''}
                     onChange={(e) => handleChange('alamat', e.target.value)}
+                    error={errors.alamat}
                 />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                     <Select
@@ -154,6 +163,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         ]}
                         value={data.provinsi || 'dki_jakarta'}
                         onChange={(e) => handleChange('provinsi', e.target.value)}
+                        error={errors.provinsi}
                     />
                     <Select
                         label="Kab/Kota"
@@ -163,6 +173,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         ]}
                         value={data.kabKota || 'jakarta_barat'}
                         onChange={(e) => handleChange('kabKota', e.target.value)}
+                        error={errors.kabKota}
                     />
                     <Select
                         label="Kecamatan"
@@ -172,6 +183,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         ]}
                         value={data.kecamatan || 'kebon_jeruk'}
                         onChange={(e) => handleChange('kecamatan', e.target.value)}
+                        error={errors.kecamatan}
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -183,6 +195,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         ]}
                         value={data.kelurahan || 'kebon_jeruk'}
                         onChange={(e) => handleChange('kelurahan', e.target.value)}
+                        error={errors.kelurahan}
                     />
                     <div className="grid grid-cols-2 gap-4">
                         <Input
@@ -191,6 +204,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                             placeholder="004"
                             value={data.rt || ''}
                             onChange={(e) => handleChange('rt', e.target.value)}
+                            error={errors.rt}
                         />
                         <Input
                             label="RW"
@@ -198,6 +212,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                             placeholder="006"
                             value={data.rw || ''}
                             onChange={(e) => handleChange('rw', e.target.value)}
+                            error={errors.rw}
                         />
                     </div>
                     <Select
@@ -208,6 +223,7 @@ const Step1DataPemilik = ({ data = {}, updateData }) => {
                         ]}
                         value={data.kodePos || '11530'}
                         onChange={(e) => handleChange('kodePos', e.target.value)}
+                        error={errors.kodePos}
                     />
                 </div>
             </FormSection>

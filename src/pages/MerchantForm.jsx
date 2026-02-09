@@ -77,6 +77,8 @@ const MerchantForm = () => {
             // There are validation errors, do not proceed
             console.log('Validation failed, setting errors');
             setValidationErrors(errors);
+            // Scroll to top to show validation errors
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 

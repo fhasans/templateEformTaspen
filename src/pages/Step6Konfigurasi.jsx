@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FormSection from '../components/FormSection';
 import Input from '../components/Input';
 import Select from '../components/Select';
+import { formatCurrency, parseCurrency } from '../utils/currencyFormatter';
 
 const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {} }) => {
 
@@ -9,7 +10,14 @@ const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {}
     const isQrisDinamis = dataPemilik.tipeLayananQRIS === 'dinamis';
 
     const handleChange = (field, value) => {
-        updateData({ [field]: value });
+        // For currency fields, parse the formatted value to store raw numbers
+        // Check if this is the biayaAdminEDC field (currency field)
+        if (field === 'biayaAdminEDC') {
+            const rawValue = parseCurrency(value);
+            updateData({ [field]: rawValue });
+        } else {
+            updateData({ [field]: value });
+        }
     };
 
     // Initialize defaults
@@ -136,8 +144,8 @@ const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {}
                             label="Biaya Administrasi EDC (per bulan)"
                             required={true}
                             placeholder="25.000"
-                            type="number"
-                            value={data.biayaAdminEDC || ''}
+                            type="text"
+                            value={formatCurrency(data.biayaAdminEDC || '')}
                             onChange={(e) => handleChange('biayaAdminEDC', e.target.value)}
                             error={errors.biayaAdminEDC}
                         />
