@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { submitApplication, resetSubmission } from '../features/merchantSlice';
 import Header from '../components/Header';
 import Stepper from '../components/Stepper';
 import Step1DataPemilik from './Step1DataPemilik';
@@ -12,7 +14,10 @@ import Step7Dokumen from './Step7Dokumen';
 import Modal from '../components/Modal';
 import { validateStep } from '../utils/validation';
 
-const MerchantForm = () => {
+const MerchantForm = ({ userEmail }) => {
+    const dispatch = useDispatch();
+    const { status, error, submissionId } = useSelector((state) => state.merchant);
+
     // Current Step State
     const [currentStep, setCurrentStep] = useState(() => {
         const savedStep = sessionStorage.getItem('merchantFormStep');
@@ -40,6 +45,32 @@ const MerchantForm = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+    // Handle Redux Submission Status
+    useEffect(() => {
+        if (status === 'succeeded') {
+            setShowSuccessModal(true);
+            // Clear storage
+            sessionStorage.removeItem('merchantFormData');
+            sessionStorage.removeItem('merchantFormStep');
+            sessionStorage.removeItem('onboardingStarted');
+            sessionStorage.removeItem('isEmailVerified');
+            sessionStorage.removeItem('isBankVerified');
+            sessionStorage.removeItem('userEmail');
+        } else if (status === 'failed') {
+            alert('Gagal menyimpan data: ' + error);
+        }
+    }, [status, error]);
+
+    // Clean up on unmount
+    useEffect(() => {
+        return () => {
+            if (status === 'succeeded' || status === 'failed') {
+                dispatch(resetSubmission());
+            }
+        }
+    }, [dispatch, status]);
+
+
     // Helper to update data for a specific section
     const updateFormData = (section, data) => {
         setFormData(prev => ({
@@ -52,10 +83,7 @@ const MerchantForm = () => {
     };
 
     const handleNext = () => {
-        console.log('handleNext called, currentStep:', currentStep);
-        console.log('formData.keuangan:', formData.keuangan);
-
-        // Get the data for the current step based on step number
+        // ... (Validation logic remains same) ...
         const stepDataMap = {
             1: formData.keuangan,
             2: { ...formData.dataPemilik, tipeNasabah: formData.dataPemilik.tipeNasabah },
@@ -66,34 +94,21 @@ const MerchantForm = () => {
             7: formData.dokumen
         };
 
-        console.log('Step data being validated:', stepDataMap[currentStep]);
-
-        // Validate current step
         const errors = validateStep(currentStep, stepDataMap[currentStep]);
 
-        console.log('Validation errors:', errors);
-
         if (Object.keys(errors).length > 0) {
-            // There are validation errors, do not proceed
-            console.log('Validation failed, setting errors');
             setValidationErrors(errors);
-            // Scroll to top to show validation errors
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
-        console.log('Validation passed, proceeding to next step');
-
-        // Clear any previous validation errors
         setValidationErrors({});
 
-        // For Step 7, show confirmation modal instead of proceeding
         if (currentStep === 7) {
             setShowConfirmModal(true);
             return;
         }
 
-        // Save to sessionStorage when "Simpan dan Lanjut" is clicked
         sessionStorage.setItem('merchantFormData', JSON.stringify(formData));
 
         if (currentStep < 7) {
@@ -109,99 +124,104 @@ const MerchantForm = () => {
         const payload = {
             submission_date: new Date().toISOString(),
             merchant_data: {
-                // Step 1: Data Pemilik
-                owner: {
-                    name: formData.dataPemilik.namaPemilik,
-                    identity_type: 'KTP', // Hardcoded as per form assumption or add field if exists
-                    identity_number: formData.dataPemilik.nik,
-                    phone: formData.dataPemilik.noHp,
-                    email: formData.dataPemilik.email, // If we captured this, or use dummy
-                    address: {
-                        province: formData.dataPemilik.provinsi,
-                        city: formData.dataPemilik.kabKota,
-                        district: formData.dataPemilik.kecamatan,
-                        subdistrict: formData.dataPemilik.kelurahan,
-                        postal_code: formData.dataPemilik.kodePos,
-                        full_address: formData.dataPemilik.alamatLengkap
-                    }
-                },
-                // Step 2: Data Usaha
-                business: {
-                    name: formData.dataUsaha.namaUsaha,
-                    type: formData.dataUsaha.jenisUsaha,
-                    business_form: formData.dataUsaha.bentukUsaha,
-                    business_type: formData.dataUsaha.tipeBisnis,
-                    address: {
-                        province: formData.dataUsaha.provinsiUsaha,
-                        city: formData.dataUsaha.kabKotaUsaha,
-                        district: formData.dataUsaha.kecamatanUsaha,
-                        subdistrict: formData.dataUsaha.kelurahanUsaha,
-                        postal_code: formData.dataUsaha.kodePosUsaha,
-                        full_address: formData.dataUsaha.alamatUsaha
-                    }
-                },
-                // Step 4 (Now Step 1 logic): Keuangan
-                financial: {
-                    bank_name: 'Bank Mandiri Taspen',
-                    account_number: formData.keuangan.nomorRekening,
-                    account_holder: formData.keuangan.namaPemilikRekening,
-                    customer_type: formData.dataPemilik.tipeNasabah // Linked from owner step
-                },
-                // Step 6: Konfigurasi & Transaksi
-                configuration: {
-                    acquisition_branch: formData.konfigurasi.kodeCabangAkusisi,
-                    location_branch: formData.konfigurasi.kodeCabangLokasi,
-                    mcc_code: formData.konfigurasi.kodeMCC,
-                    business_category: formData.konfigurasi.kategoriUsaha,
-                    mdr_rate: formData.konfigurasi.mdr,
-                    qris_service_type: formData.dataPemilik.tipeLayananQRIS,
-                    projected_transaction: {
-                        yearly_turnover: formData.dataTransaksi.omsetPerTahun,
-                        avg_transaction: formData.dataTransaksi.avgTransaksi,
-                        max_transaction: formData.dataTransaksi.maxTransaksi,
-                        daily_freq: formData.dataTransaksi.freqHarian
-                    }
-                },
-                // Documents (File paths/names)
-                documents: {
-                    ktp: formData.dokumen.fotoKTP ? formData.dokumen.fotoKTP.map(f => f.name) : [],
-                    npwp: formData.dokumen.fotoNPWP ? formData.dokumen.fotoNPWP.map(f => f.name) : [],
-                    merchant_form: formData.dokumen.formulirPermohonan ? formData.dokumen.formulirPermohonan.map(f => f.name) : [],
-                    others: formData.dokumen.dokumenLainnya ? formData.dokumen.dokumenLainnya.map(d => ({ title: d.namaDokumen, file: d.file ? d.file.name : '' })) : []
-                }
+                // ... (Mapping remains mostly same, just ensuring correct field access) ...
+                // Email & Verification (from prop)
+                email: userEmail || sessionStorage.getItem('userEmail'),
+                email_verified: true,
+
+                // Data Pemilik (Step 1)
+                tipe_nasabah: formData.dataPemilik.tipeNasabah,
+                tipe_layanan_qris: formData.dataPemilik.tipeLayananQRIS,
+                jenis_identitas: formData.dataPemilik.jenisIdentitas,
+                nomor_identitas: formData.dataPemilik.nomorIdentitas,
+                nama_pemilik: formData.dataPemilik.namaPemilik,
+                no_hp_pemilik: formData.dataPemilik.noHpPemilik,
+                npwp_pemilik: formData.dataPemilik.npwpPemilik,
+                alamat: formData.dataPemilik.alamat,
+                rt: formData.dataPemilik.rt,
+                rw: formData.dataPemilik.rw,
+                provinsi: formData.dataPemilik.provinsi,
+                kab_kota: formData.dataPemilik.kabKota,
+                kecamatan: formData.dataPemilik.kecamatan,
+                kelurahan: formData.dataPemilik.kelurahan,
+                kode_pos: formData.dataPemilik.kodePos,
+
+                // Data Usaha (Step 2)
+                jenis_usaha: formData.dataUsaha.jenisUsaha,
+                nama_merchant_official: formData.dataUsaha.namaMerchantOfficial,
+                nama_merchant_qr: formData.dataUsaha.namaMerchantQR,
+                email_notifikasi: formData.dataUsaha.emailNotifikasi,
+                email_msr: formData.dataUsaha.emailMSR,
+                bentuk_usaha: formData.dataUsaha.bentukUsaha,
+                no_telpon_usaha: formData.dataUsaha.noTelponUsaha,
+                instagram: formData.dataUsaha.instagram,
+                alamat_usaha: formData.dataUsaha.alamatUsaha,
+                rt_usaha: formData.dataUsaha.rtUsaha,
+                rw_usaha: formData.dataUsaha.rwUsaha,
+                provinsi_usaha: formData.dataUsaha.provinsiUsaha,
+                kab_kota_usaha: formData.dataUsaha.kabKotaUsaha,
+                kecamatan_usaha: formData.dataUsaha.kecamatanUsaha,
+                kelurahan_usaha: formData.dataUsaha.kelurahanUsaha,
+                kode_pos_usaha: formData.dataUsaha.kodePosUsaha,
+                lingkungan_usaha: formData.dataUsaha.lingkunganUsaha,
+                status_tempat: formData.dataUsaha.statusTempat,
+                bidang_usaha: formData.dataUsaha.bidangUsaha,
+                lama_usaha: parseInt(formData.dataUsaha.lamaUsaha) || 0,
+                jumlah_karyawan: parseInt(formData.dataUsaha.jumlahKaryawan) || 0,
+
+                // Profil (Step 3)
+                nama_pic1: formData.profil.namaPIC1,
+                nama_pic2: formData.profil.namaPIC2,
+                no_hp_pic1: formData.profil.noHpPIC1,
+                no_hp_pic2: formData.profil.noHpPIC2,
+
+                // Keuangan (Step 4)
+                nomor_rekening: formData.keuangan.nomorRekening,
+                nama_pemilik_rekening: formData.keuangan.namaPemilik,
+                kode_cabang: formData.keuangan.kodeCabang,
+                tipe_rekening: formData.keuangan.tipeRekening,
+                status_kepemilikan: formData.keuangan.statusKepemilikan,
+
+                // Transaksi (Step 5)
+                sales_volume_per_tahun: parseInt((formData.dataTransaksi.salesVolumePerTahun || '').replace(/[^0-9]/g, '')) || 0,
+                komitmen_sales_volume: parseInt((formData.dataTransaksi.komitmenSalesVolume || '').replace(/[^0-9]/g, '')) || 0,
+                rata_rata_nominal: parseInt((formData.dataTransaksi.rataRataNominal || '').replace(/[^0-9]/g, '')) || 0,
+                komitmen_saldo_mengendap: parseInt((formData.dataTransaksi.komitmenSaldoMengendap || '').replace(/[^0-9]/g, '')) || 0,
+                frekuensi_harian: parseInt(formData.dataTransaksi.frekuensiHarian) || 0,
+
+                // Konfigurasi (Step 6)
+                kode_cabang_akusisi: formData.konfigurasi.kodeCabangAkusisi,
+                kode_cabang_lokasi: formData.konfigurasi.kodeCabangLokasi,
+                kode_mcc: formData.konfigurasi.kodeMCC,
+                kategori_usaha: formData.konfigurasi.kategoriUsaha,
+                mdr: formData.konfigurasi.mdr,
+                jadwal_settlement: formData.konfigurasi.jadwalSettlement,
+                jumlah_edc: parseInt(formData.konfigurasi.jumlahEDC) || 0,
+                bank_edc_lain: formData.konfigurasi.bankEDCLain,
+                biaya_admin_edc: parseInt((formData.konfigurasi.biayaAdminEDC || '').replace(/[^0-9]/g, '')) || 0,
+
+                // Metadata
+                status: 'pending',
+                submitted_at: new Date().toISOString()
             }
         };
 
-        return payload;
+        // Re-construct the flat object for Supabase insert just like before
+        // Since our thunk expects the flat object directly for insert
+        const merchantData = payload.merchant_data;
+
+        return merchantData;
     };
 
-    const handleSubmit = () => {
-        // Close confirmation modal
+    const handleSubmit = async () => {
         setShowConfirmModal(false);
-
-        // PREPARE PAYLOAD
         const apiPayload = constructPayload();
-
-        // LOG PAYLOAD AS REQUESTED
-        console.log('>>> READY TO SEND TO API <<<');
-        console.log('Payload Structure:', apiPayload);
-        // console.log(JSON.stringify(apiPayload, null, 2)); // Uncomment to see stringified version
-
-        // Simulate successful submission
-        setTimeout(() => {
-            // Clear all session storage
-            sessionStorage.removeItem('merchantFormData');
-            sessionStorage.removeItem('merchantFormStep');
-            sessionStorage.removeItem('onboardingStarted');
-
-            // Show success modal
-            setShowSuccessModal(true);
-        }, 500);
+        dispatch(submitApplication(apiPayload));
     };
 
     const handleSuccessClose = () => {
         setShowSuccessModal(false);
-        // Redirect to landing page by refreshing
+        dispatch(resetSubmission());
         window.location.href = '/';
     };
 
@@ -280,8 +300,9 @@ const MerchantForm = () => {
                     <button
                         className="px-6 py-2 bg-[#1e3a8a] text-white font-semibold rounded hover:bg-blue-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                         onClick={handleNext}
+                        disabled={status === 'loading'}
                     >
-                        {currentStep === 7 ? 'Simpan dan Daftar' : 'Simpan dan Lanjut'}
+                        {status === 'loading' ? 'Menyimpan...' : (currentStep === 7 ? 'Simpan dan Daftar' : 'Simpan dan Lanjut')}
                     </button>
                 </div>
 

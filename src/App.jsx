@@ -6,31 +6,13 @@ import BankCheck from './pages/BankCheck';
 import './App.css';
 
 function App() {
+  // Initialize state from sessionStorage to persist across refreshes
   const [isStarted, setIsStarted] = useState(() => {
-    // Check navigation type to determine if this is a fresh visit or a reload
-    const navEntry = performance.getEntriesByType("navigation")[0];
-    const isStrictReload = navEntry && navEntry.type === 'reload';
-
-    if (isStrictReload) {
-      return sessionStorage.getItem('onboardingStarted') === 'true';
-    }
-
-    // Reset on new session
-    sessionStorage.removeItem('onboardingStarted');
-    sessionStorage.removeItem('isEmailVerified');
-    sessionStorage.removeItem('isBankVerified');
-    sessionStorage.removeItem('merchantFormData');
-    sessionStorage.removeItem('merchantFormStep');
-    return false;
+    return sessionStorage.getItem('onboardingStarted') === 'true';
   });
 
   const [isEmailVerified, setIsEmailVerified] = useState(() => {
-    const navEntry = performance.getEntriesByType("navigation")[0];
-    const isStrictReload = navEntry && navEntry.type === 'reload';
-    if (isStrictReload) {
-      return sessionStorage.getItem('isEmailVerified') === 'true';
-    }
-    return false;
+    return sessionStorage.getItem('isEmailVerified') === 'true';
   });
 
   const handleStart = () => {
@@ -38,18 +20,21 @@ function App() {
     setIsStarted(true);
   };
 
-  const handleVerified = () => {
+  const [userEmail, setUserEmail] = useState(() => {
+    return sessionStorage.getItem('userEmail') || '';
+  });
+
+  const handleVerified = (email) => {
     sessionStorage.setItem('isEmailVerified', 'true');
     setIsEmailVerified(true);
+    if (email) {
+      sessionStorage.setItem('userEmail', email);
+      setUserEmail(email);
+    }
   };
 
   const [isBankVerified, setIsBankVerified] = useState(() => {
-    const navEntry = performance.getEntriesByType("navigation")[0];
-    const isStrictReload = navEntry && navEntry.type === 'reload';
-    if (isStrictReload) {
-      return sessionStorage.getItem('isBankVerified') === 'true';
-    }
-    return false;
+    return sessionStorage.getItem('isBankVerified') === 'true';
   });
 
   const handleBankVerified = (accountNumber) => {
@@ -66,7 +51,7 @@ function App() {
       ) : !isBankVerified ? (
         <BankCheck onVerified={handleBankVerified} />
       ) : (
-        <MerchantForm />
+        <MerchantForm userEmail={userEmail} />
       )}
     </>
   );

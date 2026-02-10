@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { FaPaperPlane, FaCheckCircle, FaLock } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { sendOtp, verifyOtp, setEmail, clearError, resetAuth } from '../features/authSlice';
 
 const EmailVerification = ({ onVerified }) => {
-    const [email, setEmail] = useState('');
-    const [otp, setOtp] = useState('');
-    const [isOtpSent, setIsOtpSent] = useState(false);
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const dispatch = useDispatch();
+    const { email, isOtpSent, isVerified, isLoading, error } = useSelector((state) => state.auth);
+    const [otp, setOtp] = React.useState('');
 
-    // Mock "Server" OTP (In a real app, this comes from the backend)
-    const [serverOtp, setServerOtp] = useState(null);
+    // Trigger parent callback when verified
+    useEffect(() => {
+        if (isVerified) {
+            onVerified(email);
+        }
+    }, [isVerified, email, onVerified]);
+
+    // Clear errors on mount
+    useEffect(() => {
+        dispatch(clearError());
+    }, [dispatch]);
 
     const validateEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -17,37 +26,29 @@ const EmailVerification = ({ onVerified }) => {
 
     const handleSendOtp = () => {
         if (!email) {
-            setError('Email harus diisi');
+            // We can treat local validation errors as Redux errors or keep local
+            // For simplicity, let's just use the Redux error state or alert
+            alert('Email harus diisi'); // Or dispatch a local error action if we added one
             return;
         }
         if (!validateEmail(email)) {
-            setError('Format email tidak valid');
+            alert('Format email tidak valid');
             return;
         }
-
-        setIsLoading(true);
-        setError('');
-
-        // Simulate API call delay
-        setTimeout(() => {
-            const mockOtp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6 digit random
-            setServerOtp(mockOtp);
-            setIsOtpSent(true);
-            setIsLoading(false);
-
-            // SHOW MOCK OTP TO USER via Alert/Console (Simulating receiving email)
-            alert(`[MOCK EMAIL SERVER]\nTo: ${email}\nYour Verification Code is: ${mockOtp}`);
-            console.log(`[MOCK EMAIL SERVER] OTP for ${email}: ${mockOtp}`);
-        }, 1500);
+        dispatch(sendOtp(email));
     };
 
     const handleVerify = () => {
-        if (otp === serverOtp) {
-            // Success
-            onVerified();
-        } else {
-            setError('Kode verifikasi salah. Silakan coba lagi.');
+        if (otp.length !== 6) {
+            alert('Kode OTP harus 6 digit');
+            return;
         }
+        dispatch(verifyOtp({ email, otp }));
+    };
+
+    const handleReset = () => {
+        dispatch(resetAuth());
+        setOtp('');
     };
 
     return (
@@ -73,7 +74,7 @@ const EmailVerification = ({ onVerified }) => {
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => dispatch(setEmail(e.target.value))}
                                 placeholder="nama@perusahaan.com"
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
                             />
@@ -107,12 +108,17 @@ const EmailVerification = ({ onVerified }) => {
                         {error && <p className="text-red-500 text-sm">{error}</p>}
                         <button
                             onClick={handleVerify}
-                            className="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center gap-2"
+                            disabled={isLoading}
+                            className={`w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 transition flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            Verifikasi <FaCheckCircle />
+                            {isLoading ? 'Memproses...' : (
+                                <>
+                                    Verifikasi <FaCheckCircle />
+                                </>
+                            )}
                         </button>
                         <button
-                            onClick={() => { setIsOtpSent(false); setOtp(''); setError(''); }}
+                            onClick={handleReset}
                             className="w-full text-gray-500 text-sm hover:underline"
                         >
                             Ganti alamat email

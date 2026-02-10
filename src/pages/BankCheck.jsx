@@ -1,57 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { FaCreditCard, FaSearch, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { checkAccount, setAccountNumber, resetBankCheck, updateProgress } from '../features/bankSlice';
 
 const BankCheck = ({ onVerified }) => {
-    const [accountNumber, setAccountNumber] = useState('');
-    const [error, setError] = useState('');
-    const [showErrorModal, setShowErrorModal] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const dispatch = useDispatch();
+    const { accountNumber, accountData, isLoading, error, isValid, progress } = useSelector((state) => state.bank);
+    const [showErrorModal, setShowErrorModal] = React.useState(false);
+    const [localIsSuccess, setLocalIsSuccess] = React.useState(false);
 
-    // Success States
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [progress, setProgress] = useState(0);
+    // Sync local success state with accountData presence
+    useEffect(() => {
+        if (accountData) {
+            setLocalIsSuccess(true);
+            // Start progress animation
+            const duration = 5000;
+            const intervalTime = 50;
+            const steps = duration / intervalTime;
+            let currentStep = 0;
 
-    // DUMMY VALID DATA
-    const VALID_ACCOUNT = '1234567890';
+            const timer = setInterval(() => {
+                currentStep++;
+                const newProgress = Math.min((currentStep / steps) * 100, 100);
+                dispatch(updateProgress(newProgress));
+
+                if (currentStep >= steps) {
+                    clearInterval(timer);
+                    onVerified(accountNumber);
+                }
+            }, intervalTime);
+
+            return () => clearInterval(timer);
+        }
+    }, [accountData, accountNumber, onVerified, dispatch]);
+
+    // Handle errors
+    useEffect(() => {
+        if (error) {
+            setShowErrorModal(true);
+        }
+    }, [error]);
 
     const handleCheck = () => {
         if (!accountNumber) {
-            setError('Nomor rekening harus diisi');
+            // Local validation
+            alert('Nomor rekening harus diisi');
             return;
         }
+        dispatch(checkAccount({ accountNumber, bankName: 'Bank Mandiri Taspen' }));
+    };
 
-        setIsLoading(true);
-        setError('');
-
-        // Simulate API call
-        setTimeout(() => {
-            if (accountNumber === VALID_ACCOUNT) {
-                // Success Logic
-                setIsLoading(false);
-                setIsSuccess(true);
-
-                // Start Progress Bar (5 seconds = 5000ms)
-                const duration = 5000;
-                const intervalTime = 50; // Update every 50ms
-                const steps = duration / intervalTime;
-                let currentStep = 0;
-
-                const timer = setInterval(() => {
-                    currentStep++;
-                    const newProgress = Math.min((currentStep / steps) * 100, 100);
-                    setProgress(newProgress);
-
-                    if (currentStep >= steps) {
-                        clearInterval(timer);
-                        onVerified(accountNumber);
-                    }
-                }, intervalTime);
-
-            } else {
-                setIsLoading(false);
-                setShowErrorModal(true);
-            }
-        }, 1000);
+    const handleCloseError = () => {
+        setShowErrorModal(false);
+        // Optional: clear error in redux if needed, but not strictly required as we just closed the modal
     };
 
     return (
@@ -74,22 +75,21 @@ const BankCheck = ({ onVerified }) => {
                             type="text"
                             value={accountNumber}
                             onChange={(e) => {
-                                setAccountNumber(e.target.value.replace(/[^0-9]/g, ''));
-                                setError('');
+                                dispatch(setAccountNumber(e.target.value.replace(/[^0-9]/g, '')));
                             }}
-                            disabled={isLoading || isSuccess}
+                            disabled={isLoading || localIsSuccess}
                             placeholder="Contoh: 1234567890"
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:bg-gray-100"
                         />
-                        {isSuccess && (
+                        {localIsSuccess && (
                             <p className="text-green-600 font-bold text-sm mt-2 flex items-center justify-center gap-1 animate-pulse">
                                 <FaCheckCircle /> Rekening Terdaftar! Mengalihkan...
                             </p>
                         )}
                     </div>
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {/* Error handled via Modal, but can display here too if needed */}
 
-                    {isSuccess ? (
+                    {localIsSuccess ? (
                         <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
                             <div
                                 className="bg-green-600 h-4 rounded-full transition-all duration-75 ease-linear"
@@ -111,7 +111,7 @@ const BankCheck = ({ onVerified }) => {
                     )}
 
                     <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800">
-                        <strong>Info Simulasi:</strong> Gunakan <code>1234567890</code> untuk sukses. Angka lain akan gagal.
+                        <strong>Info Simulasi:</strong> Gunakan <code>1234567890</code> (PT Maju Jaya) untuk sukses.
                     </div>
                 </div>
             </div>
@@ -128,7 +128,7 @@ const BankCheck = ({ onVerified }) => {
                             Nomor rekening tersebut tidak ditemukan dalam sistem kami. Harap mengunjungi kantor cabang Bank Mandiri Taspen terdekat.
                         </p>
                         <button
-                            onClick={() => setShowErrorModal(false)}
+                            onClick={handleCloseError}
                             className="w-full bg-[#1e3a8a] text-white font-bold py-2 rounded-lg hover:bg-blue-800 transition shadow-lg"
                         >
                             Tutup
