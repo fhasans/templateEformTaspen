@@ -7,6 +7,8 @@ const { connectDB } = require('./db');
 const authRoutes = require('./routes/authRoutes');
 const merchantRoutes = require('./routes/merchantRoutes');
 const bankRoutes = require('./routes/bankRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +25,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/merchant', merchantRoutes); // Register Merchant Routes
 app.use('/api/bank', bankRoutes); // Register Bank Routes
+app.use('/api/upload', uploadRoutes); // Register Upload Routes
 
 app.get('/', (req, res) => {
     res.send('Merchant Onboarding API is running...');

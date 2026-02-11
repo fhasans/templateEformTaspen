@@ -147,25 +147,27 @@ const MerchantForm = ({ userEmail }) => {
                 kode_pos: formData.dataPemilik.kodePos,
 
                 // Data Usaha (Step 2)
-                jenis_usaha: formData.dataUsaha.jenisUsaha,
-                nama_merchant_official: formData.dataUsaha.namaMerchantOfficial,
+                nama_usaha: formData.dataUsaha.namaMerchantOfficial, // Backend expects 'nama_usaha'
                 nama_merchant_qr: formData.dataUsaha.namaMerchantQR,
-                email_notifikasi: formData.dataUsaha.emailNotifikasi,
-                email_msr: formData.dataUsaha.emailMSR,
+                // email_notifikasi & email_msr not used in backend currently but kept for reference
+                email_usaha: formData.dataUsaha.emailNotifikasi, // Backend expects 'email_usaha'
                 bentuk_usaha: formData.dataUsaha.bentukUsaha,
-                no_telpon_usaha: formData.dataUsaha.noTelponUsaha,
-                instagram: formData.dataUsaha.instagram,
+                no_telp_usaha: formData.dataUsaha.noTelponUsaha,
+                jenis_usaha: formData.dataUsaha.jenisUsaha,
+                bidang_usaha: formData.dataUsaha.bidangUsaha,
+
+                // Address fields
                 alamat_usaha: formData.dataUsaha.alamatUsaha,
-                rt_usaha: formData.dataUsaha.rtUsaha,
-                rw_usaha: formData.dataUsaha.rwUsaha,
+                rt_rw_usaha: (formData.dataUsaha.rtUsaha && formData.dataUsaha.rwUsaha) ? `${formData.dataUsaha.rtUsaha}/${formData.dataUsaha.rwUsaha}` : '',
                 provinsi_usaha: formData.dataUsaha.provinsiUsaha,
-                kab_kota_usaha: formData.dataUsaha.kabKotaUsaha,
+                kota_usaha: formData.dataUsaha.kabKotaUsaha,
                 kecamatan_usaha: formData.dataUsaha.kecamatanUsaha,
                 kelurahan_usaha: formData.dataUsaha.kelurahanUsaha,
                 kode_pos_usaha: formData.dataUsaha.kodePosUsaha,
+
                 lingkungan_usaha: formData.dataUsaha.lingkunganUsaha,
                 status_tempat: formData.dataUsaha.statusTempat,
-                bidang_usaha: formData.dataUsaha.bidangUsaha,
+
                 lama_usaha: parseInt(formData.dataUsaha.lamaUsaha) || 0,
                 jumlah_karyawan: parseInt(formData.dataUsaha.jumlahKaryawan) || 0,
 
@@ -202,7 +204,16 @@ const MerchantForm = ({ userEmail }) => {
 
                 // Metadata
                 status: 'pending',
-                submitted_at: new Date().toISOString()
+                submitted_at: new Date().toISOString(),
+
+                // DOKUMEN (Step 7) - WAJIB DIMASUKKAN
+                fotoKTP: formData.dokumen.fotoKTP,
+                fotoNPWP: formData.dokumen.fotoNPWP,
+                tampakDepan: formData.dokumen.tampakDepan,
+                barangJasa: formData.dokumen.barangJasa,
+                qris: formData.dokumen.qris,
+                formulirPermohonan: formData.dokumen.formulirPermohonan,
+                dokumenLainnya: formData.dokumen.dokumenLainnya
             }
         };
 

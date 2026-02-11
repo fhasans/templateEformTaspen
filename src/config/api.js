@@ -11,5 +11,6 @@ export const API_ENDPOINTS = {
     CHECK_STATUS: `${API_BASE_URL}/merchant/status`,
 
     // Bank
-    VALIDATE_BANK: `${API_BASE_URL}/bank/validate`
+    VALIDATE_BANK: `${API_BASE_URL}/bank/validate`,
+    UPLOAD_FILE: `${API_BASE_URL}/upload`
 };

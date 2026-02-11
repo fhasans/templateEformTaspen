@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { FaEye, FaTrash } from 'react-icons/fa';
+import { FaEye, FaTrash, FaSpinner } from 'react-icons/fa'; // Added FaSpinner
+import { useDispatch } from 'react-redux';
+import { uploadDocument } from '../features/merchantSlice';
 import FormSection from '../components/FormSection';
 
 const FileInput = ({ label, required, subtext, onChange, file }) => (
@@ -28,7 +30,6 @@ const MultiFileUpload = ({ label, subtext, files, onAdd, onRemove, max = 5, requ
             {label} {required && <span className="text-red-600">*</span>}
         </label>
 
-        {/* Main Upload Button (Visible if under max limit) */}
         {files.length < max && (
             <div className="flex gap-4 mb-4">
                 <div className="flex-grow">
@@ -45,7 +46,7 @@ const MultiFileUpload = ({ label, subtext, files, onAdd, onRemove, max = 5, requ
                         onChange={(e) => {
                             if (e.target.files[0]) {
                                 onAdd(e.target.files[0]);
-                                e.target.value = null; // Reset input
+                                e.target.value = null;
                             }
                         }}
                         accept=".pdf,.png,.jpg,.jpeg"
@@ -54,7 +55,6 @@ const MultiFileUpload = ({ label, subtext, files, onAdd, onRemove, max = 5, requ
             </div>
         )}
 
-        {/* List of Uploaded Files */}
         {files.length > 0 && (
             <div className="space-y-3">
                 {files.map((fileObj, index) => (
@@ -94,7 +94,7 @@ const DokumenLainnyaUpload = ({ files, onAdd, onRemove, max = 5 }) => {
             return;
         }
         onAdd(file, title);
-        setTitle(""); // Reset title
+        setTitle("");
     };
 
     return (
@@ -103,7 +103,6 @@ const DokumenLainnyaUpload = ({ files, onAdd, onRemove, max = 5 }) => {
                 <label className="block text-gray-900 font-bold mb-2 text-sm">Dokumen Lainnya</label>
             </div>
 
-            {/* Input Section */}
             {files.length < max && (
                 <div className="flex flex-col md:flex-row gap-4 mb-4">
                     <div className="w-full md:w-1/3">
@@ -142,7 +141,6 @@ const DokumenLainnyaUpload = ({ files, onAdd, onRemove, max = 5 }) => {
                 </div>
             )}
 
-            {/* List */}
             {files.length > 0 && (
                 <div className="space-y-3">
                     {files.map((fileObj, index) => (
@@ -178,38 +176,75 @@ const DokumenLainnyaUpload = ({ files, onAdd, onRemove, max = 5 }) => {
 };
 
 const Step7Dokumen = ({ data = {}, updateData, errors = {} }) => {
+    const dispatch = useDispatch();
+    const [uploading, setUploading] = useState({}); // Track uploading state per field
 
     // Helpers to handle file state in parent data
-    // Single files are stored as [file] to satisfy validator expectation of array/length
-    // or we can change validator. But let's stick to array for consistency if validator implies it.
-    // Actually, looking at validation.js, it checks .length > 0.
-
-    // Helper to get single file from data (which might be array)
     const getSingleFile = (key) => {
         const val = data[key];
         if (Array.isArray(val) && val.length > 0) return val[0];
         return null;
     };
 
-    const handleSingleFile = (key, file) => {
-        updateData({ [key]: [file] });
+    const handleSingleFile = async (key, file) => {
+        if (!file) return;
+
+        // Set loading for this key
+        setUploading(prev => ({ ...prev, [key]: true }));
+
+        try {
+            const result = await dispatch(uploadDocument(file)).unwrap();
+
+            // Result: { originalName, fileName, filePath, url }
+            const fileObj = {
+                name: result.originalName,
+                // Ensure URL is complete
+                url: result.url.startsWith('http') ? result.url : `http://localhost:3000${result.url}`,
+                filePath: result.filePath,
+                type: key,
+                file: file
+            };
+
+            updateData({ [key]: [fileObj] });
+        } catch (error) {
+            console.error("Upload Error:", error);
+            alert(`Gagal upload ${key}: ${error.message || 'Server Error'}`);
+        } finally {
+            setUploading(prev => ({ ...prev, [key]: false }));
+        }
     };
 
     const getMultiFiles = (key) => {
         return Array.isArray(data[key]) ? data[key] : [];
     };
 
-    const handleAddMulti = (key, file, customTitle = "") => {
-        const fileObj = {
-            name: file.name,
-            url: URL.createObjectURL(file), // Mock URL
-            file: file,
-            customTitle
-        };
-        const currentFiles = getMultiFiles(key);
-        updateData({
-            [key]: [...currentFiles, fileObj]
-        });
+    const handleAddMulti = async (key, file, customTitle = "") => {
+        if (!file) return;
+
+        setUploading(prev => ({ ...prev, [key]: true })); // Simple loading tracker
+
+        try {
+            const result = await dispatch(uploadDocument(file)).unwrap();
+
+            const fileObj = {
+                name: result.originalName,
+                // Ensure URL is complete if backend returns relative path
+                url: result.url.startsWith('http') ? result.url : `http://localhost:3000${result.url}`,
+                filePath: result.filePath,
+                file: file,
+                customTitle
+            };
+
+            const currentFiles = getMultiFiles(key);
+            updateData({
+                [key]: [...currentFiles, fileObj]
+            });
+        } catch (error) {
+            console.error("Upload Error:", error);
+            alert(`Gagal upload dokumen: ${error.message || 'Server Error'}`);
+        } finally {
+            setUploading(prev => ({ ...prev, [key]: false }));
+        }
     };
 
     const handleRemoveMulti = (key, index) => {
