@@ -86,8 +86,19 @@ const Step1DataPemilik = ({ data = {}, updateData, errors = {} }) => {
                     ]}
                     value={data.tipeLayananQRIS || ''}
                     onChange={(val) => handleChange('tipeLayananQRIS', val)}
-                     error={errors.tipeLayananQRIS}
+                    error={errors.tipeLayananQRIS}
                 />
+
+                {/* Kode Sales Field (New per Workflow) */}
+                <div className="mt-4">
+                    <Input
+                        label="Kode Sales (Opsional)"
+                        placeholder="Contoh: S12345"
+                        value={data.kodeSales || ''}
+                        onChange={(e) => handleChange('kodeSales', e.target.value)}
+                        error={errors.kodeSales}
+                    />
+                </div>
             </FormSection>
 
             {/* Data Pemilik Section */}
@@ -135,6 +146,7 @@ const Step1DataPemilik = ({ data = {}, updateData, errors = {} }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                         label="NPWP Pemilik"
+                        required={data.tipeNasabah === 'badan_usaha'}
                         placeholder=""
                         value={data.npwpPemilik || ''}
                         onChange={(e) => handleChange('npwpPemilik', e.target.value)}

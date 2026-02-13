@@ -12,17 +12,14 @@ const Step3Profil = ({ data = {}, updateData, dataPemilik = {}, errors = {} }) =
         setUseOwnerData(isChecked);
 
         if (isChecked) {
+            // Auto-fill from owner data
             updateData({
                 namaPIC1: dataPemilik.namaPemilik || '',
                 noHpPIC1: dataPemilik.noHpPemilik || ''
             });
-        } else {
-            // Optional: clear fields or leave them? Usually leave them is friendlier.
-            updateData({
-                namaPIC1: '',
-                noHpPIC1: ''
-            });
         }
+        // Note: When unchecked, we preserve the current data (better UX)
+        // User can manually edit or clear if needed
     };
 
     const handleChange = (field, value) => {
@@ -51,7 +48,8 @@ const Step3Profil = ({ data = {}, updateData, dataPemilik = {}, errors = {} }) =
                         label="Nama Penghubung (PIC 1)"
                         required={true}
                         placeholder="Andi Pratama"
-                        disabled={useOwnerData}
+                        readOnly={useOwnerData}
+                        className={useOwnerData ? 'bg-gray-100' : ''}
                         value={data.namaPIC1 || ''}
                         onChange={(e) => handleChange('namaPIC1', e.target.value)}
                         error={errors.namaPIC1}
@@ -71,7 +69,8 @@ const Step3Profil = ({ data = {}, updateData, dataPemilik = {}, errors = {} }) =
                         required={true}
                         type="tel"
                         placeholder="081234567890"
-                        disabled={useOwnerData}
+                        readOnly={useOwnerData}
+                        className={useOwnerData ? 'bg-gray-100' : ''}
                         value={data.noHpPIC1 || ''}
                         onChange={(e) => handleChange('noHpPIC1', e.target.value)}
                         error={errors.noHpPIC1}

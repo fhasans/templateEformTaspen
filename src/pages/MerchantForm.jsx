@@ -85,10 +85,10 @@ const MerchantForm = ({ userEmail }) => {
     const handleNext = () => {
         // ... (Validation logic remains same) ...
         const stepDataMap = {
-            1: formData.keuangan,
-            2: { ...formData.dataPemilik, tipeNasabah: formData.dataPemilik.tipeNasabah },
-            3: { ...formData.dataUsaha, tipeNasabah: formData.dataPemilik.tipeNasabah },
-            4: formData.profil,
+            1: { ...formData.dataPemilik, tipeNasabah: formData.dataPemilik.tipeNasabah },
+            2: { ...formData.dataUsaha, tipeNasabah: formData.dataPemilik.tipeNasabah },
+            3: formData.profil,
+            4: formData.keuangan,
             5: formData.dataTransaksi,
             6: { ...formData.konfigurasi, tipeLayananQRIS: formData.dataPemilik.tipeLayananQRIS },
             7: formData.dokumen
@@ -132,6 +132,9 @@ const MerchantForm = ({ userEmail }) => {
                 // Data Pemilik (Step 1)
                 tipe_nasabah: formData.dataPemilik.tipeNasabah,
                 tipe_layanan_qris: formData.dataPemilik.tipeLayananQRIS,
+                // New Kode Sales Field
+                kode_sales: formData.dataPemilik.kodeSales,
+
                 jenis_identitas: formData.dataPemilik.jenisIdentitas,
                 nomor_identitas: formData.dataPemilik.nomorIdentitas,
                 nama_pemilik: formData.dataPemilik.namaPemilik,
@@ -198,8 +201,9 @@ const MerchantForm = ({ userEmail }) => {
                 kategori_usaha: formData.konfigurasi.kategoriUsaha,
                 mdr: formData.konfigurasi.mdr,
                 jadwal_settlement: formData.konfigurasi.jadwalSettlement,
-                jumlah_edc: parseInt(formData.konfigurasi.jumlahEDC) || 0,
-                bank_edc_lain: formData.konfigurasi.bankEDCLain,
+                jumlah_qr: parseInt(formData.konfigurasi.jumlahTerminal) || 0, // JUMLAH_QR
+                jumlah_edc: parseInt(formData.konfigurasi.jumlahMesinEDC) || 0, // FIXED: was jumlahEDC
+                bank_edc_lain: formData.konfigurasi.mesinEDCLain, // FIXED: was bankEDCLain
                 biaya_admin_edc: parseInt((formData.konfigurasi.biayaAdminEDC || '').replace(/[^0-9]/g, '')) || 0,
 
                 // Metadata
@@ -252,28 +256,28 @@ const MerchantForm = ({ userEmail }) => {
                 {/* Content Area */}
                 <div className="mb-8 mt-8">
                     {currentStep === 1 ? (
-                        <Step4Keuangan
-                            data={formData.keuangan}
-                            updateData={(d) => updateFormData('keuangan', d)}
-                            errors={validationErrors}
-                        />
-                    ) : currentStep === 2 ? (
                         <Step1DataPemilik
                             data={formData.dataPemilik}
                             updateData={(d) => updateFormData('dataPemilik', d)}
                             errors={validationErrors}
                         />
-                    ) : currentStep === 3 ? (
+                    ) : currentStep === 2 ? (
                         <Step2DataUsaha
                             data={formData.dataUsaha}
                             updateData={(d) => updateFormData('dataUsaha', d)}
                             errors={validationErrors}
                         />
-                    ) : currentStep === 4 ? (
+                    ) : currentStep === 3 ? (
                         <Step3Profil
                             data={formData.profil}
                             updateData={(d) => updateFormData('profil', d)}
                             dataPemilik={formData.dataPemilik}
+                            errors={validationErrors}
+                        />
+                    ) : currentStep === 4 ? (
+                        <Step4Keuangan
+                            data={formData.keuangan}
+                            updateData={(d) => updateFormData('keuangan', d)}
                             errors={validationErrors}
                         />
                     ) : currentStep === 5 ? (

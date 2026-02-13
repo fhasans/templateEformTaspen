@@ -64,7 +64,7 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
         updateData({ [field]: value });
     };
 
-    // Initialize defaults
+    // Initialize defaults based on FSD logic
     React.useEffect(() => {
         const defaults = {
             jenisUsaha: 'rumah_makan',
@@ -73,7 +73,8 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
             kecamatanUsaha: 'setiabudi',
             kelurahanUsaha: 'karet_semanggi',
             kodePosUsaha: '12930',
-            bentukUsaha: 'perorangan',
+            // bentukUsaha logic is handled in subsequent effect, but default safe value:
+            bentukUsaha: data.tipeNasabah === 'perorangan' ? 'perorangan' : 'pt',
             tipeBisnis: 'retail'
         };
 
@@ -89,6 +90,14 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
         }
     }, []);
 
+    // Effect to enforce "Bentuk Usaha" based on "Tipe Nasabah"
+    React.useEffect(() => {
+        if (data.tipeNasabah === 'perorangan') {
+            if (data.bentukUsaha !== 'perorangan') {
+                updateData({ bentukUsaha: 'perorangan' });
+            }
+        }
+    }, [data.tipeNasabah]);
 
     return (
         <div>
@@ -111,19 +120,35 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                     <Input
                         label="Nama Merchant (Official)"
                         placeholder="PT Maju Jaya Sejahtera"
+                        required={data.tipeNasabah === 'badan_usaha'} // Mandatory for Badan Usaha
                         value={data.namaMerchantOfficial || ''}
                         onChange={(e) => handleChange('namaMerchantOfficial', e.target.value)}
                         error={errors.namaMerchantOfficial}
                     />
-                    <Input
-                        label="Nama Merchant di QR (Sticker)"
-                        required={true}
-                        placeholder="Rumah Makan Maju Jaya Sejahtera"
-                        subtext="" // Can add info icon if needed
-                        value={data.namaMerchantQR || ''}
-                        onChange={(e) => handleChange('namaMerchantQR', e.target.value)}
-                        error={errors.namaMerchantQR}
-                    />
+                    <div>
+                        <Input
+                            label="Nama Merchant di QR (Sticker)"
+                            required={true}
+                            placeholder="Rumah Makan Maju Jaya Sejahtera"
+                            value={data.namaMerchantQR || ''}
+                            onChange={(e) => handleChange('namaMerchantQR', e.target.value)}
+                            error={errors.namaMerchantQR}
+                        />
+                        {/* Suggest Keywords */}
+                        <div className="mt-2 text-sm text-gray-600 flex gap-2 items-center flex-wrap">
+                            <span className="font-semibold text-green-600 italic">suggest:</span>
+                            {['Warung', 'Restaurant', 'Rumah Makan'].map(keyword => (
+                                <button
+                                    key={keyword}
+                                    type="button"
+                                    onClick={() => handleChange('namaMerchantQR', keyword + ' ')}
+                                    className="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded border border-gray-300 transition-colors"
+                                >
+                                    {keyword}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <Input
@@ -241,20 +266,69 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                     />
                 </div>
             </FormSection>
+
             {/* Legal & Bentuk Usaha */}
             <FormSection title="Legal & Bentuk Usaha">
-                <Select
-                    label="Bentuk Usaha"
-                    required={true}
-                    options={[
-                        { value: 'perorangan', label: 'Perorangan' },
-                        { value: 'pt', label: 'PT' },
-                        { value: 'cv', label: 'CV' },
-                    ]}
-                    value={data.bentukUsaha || 'perorangan'}
-                    onChange={(e) => handleChange('bentukUsaha', e.target.value)}
-                    error={errors.bentukUsaha}
-                />
+                {data.tipeNasabah === 'perorangan' ? (
+                    <Input
+                        label="Bentuk Usaha"
+                        required={true}
+                        value="Perorangan"
+                        readOnly={true} // Readonly for perorangan
+                        className="bg-gray-100"
+                    />
+                ) : (
+                    <Select
+                        label="Bentuk Usaha"
+                        required={true}
+                        options={[
+                            { value: 'pt', label: 'PT' },
+                            { value: 'cv', label: 'CV' },
+                            { value: 'yayasan', label: 'Yayasan' },
+                            { value: 'koperasi', label: 'Koperasi' },
+                            { value: 'pameran', label: 'Pameran' },
+                            { value: 'lainnya', label: 'Lainnya' },
+                        ]}
+                        value={data.bentukUsaha || ''}
+                        onChange={(e) => handleChange('bentukUsaha', e.target.value)}
+                        error={errors.bentukUsaha}
+                    />
+                )}
+
+                {/* Conditional Pameran Dates */}
+                {(data.bentukUsaha === 'pameran' && data.tipeNasabah !== 'perorangan') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <Input
+                            label="Jadwal Pameran Awal"
+                            type="date"
+                            required={true}
+                            value={data.pameran_start || ''}
+                            onChange={(e) => handleChange('pameran_start', e.target.value)}
+                            error={errors.pameran_start} // Validation needed
+                        />
+                        <Input
+                            label="Jadwal Pameran Akhir"
+                            type="date"
+                            required={true}
+                            value={data.pameran_end || ''}
+                            onChange={(e) => handleChange('pameran_end', e.target.value)}
+                            error={errors.pameran_end} // Validation needed
+                        />
+                    </div>
+                )}
+                {/* Conditional Lainnya Input */}
+                {(data.bentukUsaha === 'lainnya' && data.tipeNasabah !== 'perorangan') && (
+                    <div className="mt-4">
+                        <Input
+                            label="Bentuk Usaha (Lainnya)"
+                            required={true}
+                            placeholder="Sebutkan bentuk usaha..."
+                            value={data.bentukUsahaLainnya || ''}
+                            onChange={(e) => handleChange('bentukUsahaLainnya', e.target.value)}
+                        // error={errors.bentukUsahaLainnya} -> Validasi perlu tambah
+                        />
+                    </div>
+                )}
             </FormSection>
 
             {/* Profil Usaha */}
@@ -297,6 +371,7 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                             { value: 'perkantoran', label: 'Perkantoran' },
                             { value: 'pertokoan', label: 'Pertokoan' },
                             { value: 'pkl', label: 'PKL/Gerobak/Tenda' },
+                            { value: 'lainnya', label: 'Lainnya' },
                         ].map((option) => (
                             <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
                                 <input
@@ -311,6 +386,15 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                             </label>
                         ))}
                     </div>
+                    {data.lingkunganUsaha === 'lainnya' && (
+                        <div className="mt-2">
+                            <Input
+                                placeholder="Sebutkan lingkungan usaha..."
+                                value={data.lingkunganUsahaLainnya || ''}
+                                onChange={(e) => handleChange('lingkunganUsahaLainnya', e.target.value)}
+                            />
+                        </div>
+                    )}
                     {errors.lingkunganUsaha && <p className="text-red-500 text-xs mt-1">{errors.lingkunganUsaha}</p>}
                 </div>
 
@@ -350,6 +434,9 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                                     <option value="08:00">08:00</option>
                                     <option value="09:00">09:00</option>
                                     <option value="10:00">10:00</option>
+                                    {/* Additional Hours */}
+                                    <option value="11:00">11:00</option>
+                                    <option value="12:00">12:00</option>
                                 </select>
                                 <span>-</span>
                                 <select
@@ -359,6 +446,9 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                                 >
                                     <option value="">Tutup</option>
                                     <option value="17:00">17:00</option>
+                                    <option value="18:00">18:00</option>
+                                    <option value="19:00">19:00</option>
+                                    <option value="20:00">20:00</option>
                                     <option value="21:00">21:00</option>
                                     <option value="22:00">22:00</option>
                                 </select>

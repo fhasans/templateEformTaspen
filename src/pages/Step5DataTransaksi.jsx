@@ -48,8 +48,8 @@ const Step5DataTransaksi = ({ data = {}, updateData, errors = {} }) => {
                     label="Estimasi Frekuensi Transaksi"
                     placeholder="400"
                     type="number"
-                    value={data.estimasiFrekuensi || ''}
-                    onChange={(e) => handleChange('estimasiFrekuensi', e.target.value)}
+                    value={data.frekuensiHarian || ''}
+                    onChange={(e) => handleChange('frekuensiHarian', e.target.value)}
                 />
             </div>
         </FormSection>

@@ -71,8 +71,9 @@ const Step4Keuangan = ({ data = {}, updateData, errors = {} }) => {
             <div className="mb-4">
                 <Input
                     label="Bank Tujuan"
-                    defaultValue="Bank Mandiri Taspen"
-                // disabled={true}
+                    value="Bank Mandiri Taspen"
+                    readOnly={true}
+                    className="bg-gray-100"
                 />
             </div>
 
@@ -81,7 +82,7 @@ const Step4Keuangan = ({ data = {}, updateData, errors = {} }) => {
                     <Input
                         label="Nomor Rekening"
                         required={true}
-                        placeholder="2001122334"
+                        placeholder="1234567890"
                         type="text"
                         value={data.nomorRekening || ''}
                         onChange={(e) => {
@@ -107,14 +108,16 @@ const Step4Keuangan = ({ data = {}, updateData, errors = {} }) => {
                     <Input
                         label="Nama Pemilik Rekening"
                         placeholder=""
-                        disabled={true}
+                        readOnly={true}
+                        className="bg-gray-100"
                         value={data.namaPemilik || ''}
                     />
                     {errors.namaPemilikRekening && <p className="text-red-500 text-sm -mt-3 mb-3">{errors.namaPemilikRekening}</p>}
                     <Input
                         label="Kode Cabang Rekening"
                         placeholder=""
-                        disabled={true}
+                        readOnly={true}
+                        className="bg-gray-100"
                         value={data.kodeCabang || ''}
                     />
                     {errors.kodeCabangRekening && <p className="text-red-500 text-sm -mt-3 mb-3">{errors.kodeCabangRekening}</p>}
@@ -123,7 +126,8 @@ const Step4Keuangan = ({ data = {}, updateData, errors = {} }) => {
                     <Input
                         label="Tipe Rekening"
                         placeholder=""
-                        disabled={true}
+                        readOnly={true}
+                        className="bg-gray-100"
                         value={data.tipeRekening || ''}
                     />
                     {errors.tipeRekening && <p className="text-red-500 text-sm -mt-3 mb-3">{errors.tipeRekening}</p>}

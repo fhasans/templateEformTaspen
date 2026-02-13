@@ -46,16 +46,6 @@ const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {}
         <FormSection title="Konfigurasi Teknis">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                 <Select
-                    label="Kode Cabang Akuisisi (Konsol)"
-                    required={true}
-                    options={[
-                        { value: "1201", label: "1201 - KC JAKARTA" },
-                    ]}
-                    value={data.kodeCabangAkusisi || '1201'}
-                    onChange={(e) => handleChange('kodeCabangAkusisi', e.target.value)}
-                    error={errors.kodeCabangAkusisi}
-                />
-                <Select
                     label="Kode Cabang Lokasi (Unit)"
                     required={true}
                     options={[
@@ -64,6 +54,16 @@ const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {}
                     value={data.kodeCabangLokasi || '1201'}
                     onChange={(e) => handleChange('kodeCabangLokasi', e.target.value)}
                     error={errors.kodeCabangLokasi}
+                />
+                <Select
+                    label="Kode Cabang Akuisisi (Konsol)"
+                    required={true}
+                    options={[
+                        { value: "1201", label: "1201 - KC JAKARTA" },
+                    ]}
+                    value={data.kodeCabangAkusisi || '1201'}
+                    onChange={(e) => handleChange('kodeCabangAkusisi', e.target.value)}
+                    error={errors.kodeCabangAkusisi}
                 />
             </div>
 
@@ -94,10 +94,9 @@ const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {}
                 <Input
                     label="MDR"
                     required={true}
-                    defaultValue="0.7%"
-                    disabled={true}
                     value={data.mdr || '0.7%'}
-                    onChange={(e) => handleChange('mdr', e.target.value)} // Even if disabled, binding is good
+                    readOnly={true}
+                    className="bg-gray-100"
                     error={errors.mdr}
                 />
             </div>
@@ -118,6 +117,7 @@ const Step6Konfigurasi = ({ data = {}, updateData, dataPemilik = {}, errors = {}
                     type="number"
                     value={data.jumlahTerminal || ''}
                     onChange={(e) => handleChange('jumlahTerminal', e.target.value)}
+                    error={errors.jumlahTerminal}
                 />
             </div>
 

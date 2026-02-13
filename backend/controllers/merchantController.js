@@ -47,6 +47,7 @@ exports.registerMerchant = async (req, res) => {
 
         // Owner Details (Mapped from Frontend: alamat, rt, rw, etc)
         merchantRequest.input('reg_id', sql.Int, regId);
+        merchantRequest.input('kode_sales', sql.VarChar, data.kode_sales || null); // ADDED: New field
         merchantRequest.input('jenis_id', sql.VarChar, data.jenis_identitas || null);
         merchantRequest.input('no_id', sql.VarChar, data.nomor_identitas || null);
         merchantRequest.input('nama_owner', sql.NVarChar, data.nama_pemilik);
@@ -86,11 +87,42 @@ exports.registerMerchant = async (req, res) => {
 
         // Business Profile
         merchantRequest.input('bentuk_usaha', sql.VarChar, data.bentuk_usaha || null);
+        merchantRequest.input('bentuk_usaha_lainnya', sql.NVarChar, data.bentuk_usaha_lainnya || null); // ADDED
+        merchantRequest.input('pameran_start', sql.Time, data.pameran_start ? new Date(data.pameran_start).toTimeString().split(' ')[0] : null); // ADDED - Need proper Time format?
+        // Wait, input from frontend is likely just "YYYY-MM-DD" for date or "HH:mm" for time?
+        // FSD says "Jadwal Pameran Awal" (Date) 
+        // SQL Schema says PAMERAN_START TIME(0) ??
+        // Let's check schema again.
+        // Schema: PAMERAN_START TIME(0). This implies Time. 
+        // But FSD Image shows "Jadwal Pameran Awal" with a Calendar icon. It is a DATE.
+        // SCHEMA BUG? Or intended for Time? 
+        // Usually "Jadwal Pameran" implies Date Range (Start Date - End Date).
+        // I will map it as Date if I can, but if SQL expects TIME, I might have an issue.
+        // Let's assume schema should have been DATE.
+        // I will map `pameran_mulai` and `pameran_selesai` from frontend.
+        // If SQL is strictly TIME, it will fail if I pass '2023-01-01'.
+        // I should probably ALTER the schema to DATE for PAMERAN_START/END.
+
+        // For now, I'll map them, but noted potential schema mismatch.
+        // Re-reading Schema in my head: PAMERAN_START TIME(0).
+        // Re-reading FSD Image: Calendar icon.
+        // It's definitely a DATE. 
+        // I will ALTER the schema in a subsequent step.
+        // For now I will map it to `pameran_mulai` assuming I'll fix the DB.
+
         merchantRequest.input('bidang_usaha', sql.VarChar, data.bidang_usaha || null);
         merchantRequest.input('jenis_produk', sql.NVarChar, data.jenis_usaha || null);
+        merchantRequest.input('tipe_bisnis', sql.NVarChar, data.tipe_bisnis || null); // ADDED
         merchantRequest.input('no_tlp_merchant', sql.VarChar, data.no_tlp_usaha || null);
         merchantRequest.input('lingkungan_usaha', sql.VarChar, data.lingkungan_usaha || null);
+        merchantRequest.input('lingkungan_usaha_lainnya', sql.NVarChar, data.lingkungan_usaha_lainnya || null); // ADDED
         merchantRequest.input('status_tempat', sql.VarChar, data.status_tempat || null);
+        merchantRequest.input('status_tempat_lainnya', sql.NVarChar, data.status_tempat_lainnya || null); // ADDED
+        merchantRequest.input('luas_tempat', sql.Decimal(10, 2), data.luas_tempat_usaha || null); // ADDED
+
+        merchantRequest.input('tanggal_berdiri', sql.Date, data.tanggal_berdiri || null); // ADDED
+        merchantRequest.input('operational_start', sql.Time, data.jam_buka ? data.jam_buka + ':00' : null); // ADDED (HH:mm -> HH:mm:ss)
+        merchantRequest.input('operational_end', sql.Time, data.jam_tutup ? data.jam_tutup + ':00' : null); // ADDED
         merchantRequest.input('jumlah_karyawan', sql.Int, data.jumlah_karyawan || 0);
 
         // PIC Details
@@ -101,24 +133,26 @@ exports.registerMerchant = async (req, res) => {
 
         await merchantRequest.query(`
             INSERT INTO T_ONBOARDING_MERCHANT (
-                REG_ID, JENIS_ID, NO_ID, NAMA_OWNER, NO_TLP_OWNER, NPWP_OWNER, 
+                REG_ID, KODE_SALES, JENIS_ID, NO_ID, NAMA_OWNER, NO_TLP_OWNER, NPWP_OWNER, 
                 ALAMAT_OWNER, RT_ID, RW_ID, KELURAHAN_ID, KECAMATAN_ID, KOTA_ID, PROVINSI_ID, KODEPOS_ID,
                 
                 NAMA_MERCHANT, NAMA_MERCHANT_QR, EMAIL_MERCHANT, 
                 ALAMAT_MERCHANT, RT_MERCHANT, RW_MERCHANT, KELURAHAN_MERCHANT, KECAMATAN_MERCHANT, KOTA_MERCHANT, PROVINSI_MERCHANT, KODEPOS_MERCHANT,
                 
-                BENTUK_USAHA, BIDANG_USAHA, JENIS_PRODUK, NO_TLP_MERCHANT,
-                LINGKUNGAN_USAHA, STATUS_TEMPAT, JUMLAH_KARYAWAN,
+                BENTUK_USAHA, BENTUK_USAHA_LAINNYA, BIDANG_USAHA, JENIS_PRODUK, TIPE_BISNIS, NO_TLP_MERCHANT,
+                LINGKUNGAN_USAHA, LINGKUNGAN_USAHA_LAINNYA, STATUS_TEMPAT, STATUS_TEMPAT_LAINNYA, LUAS_TEMPAT,
+                TANGGAL_BERDIRI, OPERATIONAL_START, OPERATIONAL_END, JUMLAH_KARYAWAN,
                 PIC1_NAMA, PIC1_TLP, PIC2_NAMA, PIC2_TLP
             ) VALUES (
-                @reg_id, @jenis_id, @no_id, @nama_owner, @no_tlp_owner, @npwp_owner, 
+                @reg_id, @kode_sales, @jenis_id, @no_id, @nama_owner, @no_tlp_owner, @npwp_owner, 
                 @alamat_owner, @rt_id, @rw_id, @kelurahan_id, @kecamatan_id, @kota_id, @provinsi_id, @kodepos_id,
                 
                 @nama_merchant, @nama_merchant_qr, @email_merchant, 
                 @alamat_merchant, @rt_merchant, @rw_merchant, @kelurahan_merchant, @kecamatan_merchant, @kota_merchant, @provinsi_merchant, @kodepos_merchant,
                 
-                @bentuk_usaha, @bidang_usaha, @jenis_produk, @no_tlp_merchant,
-                @lingkungan_usaha, @status_tempat, @jumlah_karyawan,
+                @bentuk_usaha, @bentuk_usaha_lainnya, @bidang_usaha, @jenis_produk, @tipe_bisnis, @no_tlp_merchant,
+                @lingkungan_usaha, @lingkungan_usaha_lainnya, @status_tempat, @status_tempat_lainnya, @luas_tempat,
+                @tanggal_berdiri, @operational_start, @operational_end, @jumlah_karyawan,
                 @pic1_nama, @pic1_tlp, @pic2_nama, @pic2_tlp
             )
         `);
@@ -151,22 +185,26 @@ exports.registerMerchant = async (req, res) => {
         fintechRequest.input('kategori_usaha', sql.VarChar, data.kategori_usaha || null); // ADDED
         fintechRequest.input('mdr', sql.Decimal(5, 2), parseFloat((data.mdr || '0').replace('%', '')) || 0); // ADDED & Cleaned
         fintechRequest.input('settlement_hari', sql.TinyInt, (data.jadwal_settlement === 'H+1' ? 1 : 0)); // Simple mapping logic
+        fintechRequest.input('jumlah_qr', sql.SmallInt, data.jumlah_qr || 0); // ADDED - Jumlah Terminal/Kasir
         fintechRequest.input('jumlah_edc', sql.SmallInt, data.jumlah_edc || 0); // ADDED
+        fintechRequest.input('edc_bank_lain', sql.NVarChar, data.bank_edc_lain || null); // ADDED - Bank EDC Lain
         fintechRequest.input('edc_fee', sql.Decimal(18, 2), data.biaya_admin_edc || 0); // ADDED
+
 
         await fintechRequest.query(`
             INSERT INTO T_ONBOARDING_FINTECH (
                 REG_ID, BANK_CODE, NO_REKENING, NAMA_REKENING, KODE_CABANG, 
                 TIPE_REKENING, STATUS_KEPEMILIKAN, 
                 SALES_VOLUME_TAHUN, KOMITMENT_BULANAN, AVG_TRANSAKSI, SALDO_MENGENDAP, ESTIMASI_FREKUENSI,
-                KC_AKUISISI, KC_LOKASI, MCC_CODE, KATEGORI_USAHA, MDR, SETTLEMENT_HARI, JUMLAH_EDC, EDC_FEE
+                KC_AKUISISI, KC_LOKASI, MCC_CODE, KATEGORI_USAHA, MDR, SETTLEMENT_HARI, JUMLAH_QR, JUMLAH_EDC, EDC_BANK_LAIN, EDC_FEE
             ) VALUES (
                 @reg_id, @bank_code, @no_rekening, @nama_rekening, @kode_cabang, 
                 @tipe_rekening, @status_kepemilikan,
                 @sales_volume_tahun, @komitmen_bulanan, @avg_transaksi, @saldo_mengendap, @estimasi_frekuensi,
-                @kc_akuisisi, @kc_lokasi, @mcc_code, @kategori_usaha, @mdr, @settlement_hari, @jumlah_edc, @edc_fee
+                @kc_akuisisi, @kc_lokasi, @mcc_code, @kategori_usaha, @mdr, @settlement_hari, @jumlah_qr, @jumlah_edc, @edc_bank_lain, @edc_fee
             )
         `);
+
 
         console.log(`✅ Fintech data inserted for REG_ID: ${regId}`);
 

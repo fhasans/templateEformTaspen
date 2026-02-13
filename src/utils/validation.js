@@ -94,7 +94,7 @@ export const validateStep1 = (data) => {
     }
 
     // Conditional NPWP validation
-    if (data.tipeNasabah === 'Badan Usaha') {
+    if (data.tipeNasabah === 'badan_usaha') {
         if (!validators.required(data.npwpPemilik)) {
             errors.npwpPemilik = 'NPWP Pemilik harus diisi untuk Badan Usaha';
         } else if (!validators.npwp(data.npwpPemilik)) {
@@ -141,7 +141,7 @@ export const validateStep2 = (data) => {
     }
 
     // Conditional Nama Merchant Official
-    if (data.tipeNasabah === 'Badan Usaha') {
+    if (data.tipeNasabah === 'badan_usaha') {
         if (!validators.required(data.namaMerchantOfficial)) {
             errors.namaMerchantOfficial = 'Nama Merchant Official harus diisi untuk Badan Usaha';
         }
@@ -169,6 +169,21 @@ export const validateStep2 = (data) => {
         errors.bentukUsaha = 'Bentuk Usaha harus dipilih';
     }
 
+    // Conditional Validation for Bentuk Usaha
+    if (data.bentukUsaha === 'lainnya') {
+        if (!validators.required(data.bentukUsahaLainnya)) {
+            errors.bentukUsahaLainnya = 'Bentuk Usaha Lainnya harus diisi';
+        }
+    } else if (data.bentukUsaha === 'pameran') {
+        if (!validators.required(data.pameran_start)) {
+            errors.pameran_start = 'Jadwal Pameran Awal harus diisi';
+        }
+        if (!validators.required(data.pameran_end)) {
+            errors.pameran_end = 'Jadwal Pameran Akhir harus diisi';
+        }
+        // Ideally, check if End Date >= Start Date
+    }
+
     if (!validators.required(data.noTelponUsaha)) {
         errors.noTelponUsaha = 'No Telpon Usaha harus diisi';
     } else if (!validators.phone(data.noTelponUsaha)) {
@@ -177,6 +192,10 @@ export const validateStep2 = (data) => {
 
     if (!validators.required(data.lingkunganUsaha)) {
         errors.lingkunganUsaha = 'Lingkungan Usaha harus dipilih';
+    } else if (data.lingkunganUsaha === 'lainnya') {
+        if (!validators.required(data.lingkunganUsahaLainnya)) {
+            errors.lingkunganUsaha = 'Lingkungan Usaha Lainnya harus diisi'; // Using same error key for display simplicity
+        }
     }
 
     if (!validators.required(data.statusTempat)) {
@@ -268,6 +287,10 @@ export const validateStep6 = (data) => {
         errors.jadwalSettlement = 'Jadwal Settlement harus diisi';
     }
 
+    if (!validators.required(data.jumlahTerminal)) {
+        errors.jumlahTerminal = 'Jumlah Terminal/Kasir harus diisi';
+    }
+
     // Conditional: Biaya Admin EDC mandatory if QRIS Dinamis
     if (data.tipeLayananQRIS === 'QRIS Dinamis') {
         if (!validators.required(data.biayaAdminEDC)) {
@@ -297,18 +320,18 @@ export const validateStep7 = (data) => {
 };
 
 // Main validation function that routes to step-specific validators
-// Note: UI step order is different from component names
-// UI Step 1 = Step4Keuangan, UI Step 2 = Step1DataPemilik, etc.
+// Note: UI step order is now matching the file naming convention
+// Step 1 = Step1DataPemilik, Step 2 = Step2DataUsaha, etc.
 export const validateStep = (uiStepNumber, data) => {
     switch (uiStepNumber) {
         case 1:
-            return validateStep4(data); // Data Rekening Pencairan
-        case 2:
             return validateStep1(data); // Data Pemilik
-        case 3:
+        case 2:
             return validateStep2(data); // Data Usaha
-        case 4:
+        case 3:
             return validateStep3(data); // Profil
+        case 4:
+            return validateStep4(data); // Keuangan
         case 5:
             return validateStep5(data); // Data Transaksi
         case 6:
