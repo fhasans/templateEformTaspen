@@ -14,7 +14,9 @@ import Step7Dokumen from './Step7Dokumen';
 import Modal from '../components/Modal';
 import { validateStep } from '../utils/validation';
 
-const MerchantForm = ({ userEmail }) => {
+import { secureStorage } from '../utils/secureStorage';
+
+const MerchantForm = ({ userEmail, verifiedAccountData }) => {
     const dispatch = useDispatch();
     const { status, error, submissionId } = useSelector((state) => state.merchant);
 
@@ -27,7 +29,7 @@ const MerchantForm = ({ userEmail }) => {
     // Initialize state from sessionStorage or empty object
     const [formData, setFormData] = useState(() => {
         const savedData = sessionStorage.getItem('merchantFormData');
-        return savedData ? JSON.parse(savedData) : {
+        const initialData = savedData ? JSON.parse(savedData) : {
             keuangan: {},
             dataPemilik: {},
             dataUsaha: {},
@@ -36,7 +38,50 @@ const MerchantForm = ({ userEmail }) => {
             konfigurasi: {},
             dokumen: {}
         };
+
+        // Check for verified account data (Passed from App.jsx or Session)
+        // Use secureStorage here if possible, but fallback to direct prop for now
+        const accountData = verifiedAccountData || secureStorage.getItem('verifiedAccountData');
+
+        // If we have verified account data, ensure it's merged into Step 4
+        if (accountData) {
+            initialData.keuangan = {
+                ...initialData.keuangan,
+                nomorRekening: accountData.nomorRekening,
+                namaPemilik: accountData.nama,
+                kodeCabang: accountData.cabang,
+                tipeRekening: accountData.tipe,
+            };
+        }
+
+        return initialData;
     });
+
+    // EFFECT: Force Sync Verified Data (Fix for blank fields issue)
+    useEffect(() => {
+        const accountData = verifiedAccountData || secureStorage.getItem('verifiedAccountData');
+        if (accountData) {
+            setFormData(prev => {
+                // Only update if data is missing or different
+                if (prev.keuangan.nomorRekening === accountData.nomorRekening &&
+                    prev.keuangan.namaPemilik === accountData.nama) {
+                    return prev;
+                }
+
+                console.log("Syncing verified account data to form:", accountData);
+                return {
+                    ...prev,
+                    keuangan: {
+                        ...prev.keuangan,
+                        nomorRekening: accountData.nomorRekening,
+                        namaPemilik: accountData.nama,
+                        kodeCabang: accountData.cabang,
+                        tipeRekening: accountData.tipe,
+                    }
+                };
+            });
+        }
+    }, [verifiedAccountData]);
 
     // Validation errors state
     const [validationErrors, setValidationErrors] = useState({});
@@ -52,10 +97,11 @@ const MerchantForm = ({ userEmail }) => {
             // Clear storage
             sessionStorage.removeItem('merchantFormData');
             sessionStorage.removeItem('merchantFormStep');
-            sessionStorage.removeItem('onboardingStarted');
-            sessionStorage.removeItem('isEmailVerified');
-            sessionStorage.removeItem('isBankVerified');
-            sessionStorage.removeItem('userEmail');
+            secureStorage.removeItem('onboardingStarted');
+            secureStorage.removeItem('isEmailVerified');
+            secureStorage.removeItem('isBankVerified');
+            secureStorage.removeItem('userEmail');
+            secureStorage.removeItem('verifiedAccountData');
         } else if (status === 'failed') {
             alert('Gagal menyimpan data: ' + error);
         }

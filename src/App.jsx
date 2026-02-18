@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import EmailVerification from './pages/EmailVerification';
 import BankCheck from './pages/BankCheck';
 import './App.css';
+import { secureStorage } from './utils/secureStorage';
 
 function App() {
   // Initialize state from sessionStorage to persist across refreshes
@@ -16,30 +17,37 @@ function App() {
   });
 
   const handleStart = () => {
-    sessionStorage.setItem('onboardingStarted', 'true');
+    secureStorage.setItem('onboardingStarted', true);
     setIsStarted(true);
   };
 
   const [userEmail, setUserEmail] = useState(() => {
-    return sessionStorage.getItem('userEmail') || '';
+    return secureStorage.getItem('userEmail') || '';
   });
 
   const handleVerified = (email) => {
-    sessionStorage.setItem('isEmailVerified', 'true');
+    secureStorage.setItem('isEmailVerified', true);
     setIsEmailVerified(true);
     if (email) {
-      sessionStorage.setItem('userEmail', email);
+      secureStorage.setItem('userEmail', email);
       setUserEmail(email);
     }
   };
 
   const [isBankVerified, setIsBankVerified] = useState(() => {
-    return sessionStorage.getItem('isBankVerified') === 'true';
+    return secureStorage.getItem('isBankVerified') === true;
   });
 
-  const handleBankVerified = (accountNumber) => {
-    sessionStorage.setItem('isBankVerified', 'true');
+  const [verifiedAccountData, setVerifiedAccountData] = useState(() => {
+    const stored = secureStorage.getItem('verifiedAccountData');
+    return stored || null;
+  });
+
+  const handleBankVerified = (accountData) => {
+    secureStorage.setItem('isBankVerified', true);
+    secureStorage.setItem('verifiedAccountData', accountData);
     setIsBankVerified(true);
+    setVerifiedAccountData(accountData);
   };
 
   return (
@@ -51,7 +59,7 @@ function App() {
       ) : !isBankVerified ? (
         <BankCheck onVerified={handleBankVerified} />
       ) : (
-        <MerchantForm userEmail={userEmail} />
+        <MerchantForm userEmail={userEmail} verifiedAccountData={verifiedAccountData} />
       )}
     </>
   );

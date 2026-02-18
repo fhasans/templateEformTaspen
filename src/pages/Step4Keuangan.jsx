@@ -84,23 +84,11 @@ const Step4Keuangan = ({ data = {}, updateData, errors = {} }) => {
                         required={true}
                         placeholder="1234567890"
                         type="text"
+                        readOnly={true} // Verified upstream
+                        className="bg-gray-100 cursor-not-allowed"
                         value={data.nomorRekening || ''}
-                        onChange={(e) => {
-                            // Only allow numbers
-                            const val = e.target.value.replace(/[^0-9]/g, '');
-                            handleInputChange('nomorRekening', val);
-                        }}
                     />
-                    {error && <p className="text-red-500 text-sm -mt-3">{error}</p>}
                 </div>
-                <button
-                    onClick={handleCekRekening}
-                    disabled={isLoading}
-                    className={`text-white px-6 py-2 rounded shadow transition-colors font-semibold border border-transparent whitespace-nowrap h-[42px] ${error ? 'mb-6' : 'mb-4'} flex-shrink-0 ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#1e3a8a] hover:bg-blue-800'}`}
-                >
-                    {isLoading ? 'Memeriksa...' : 'Cek Rekening'}
-                </button>
-
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
