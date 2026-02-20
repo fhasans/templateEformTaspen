@@ -22,20 +22,23 @@ const MerchantForm = ({ userEmail, verifiedAccountData }) => {
 
     // Current Step State
     const [currentStep, setCurrentStep] = useState(() => {
-        const savedStep = sessionStorage.getItem('merchantFormStep');
+        const savedStep = secureStorage.getItem('merchantFormStep');
         return savedStep ? parseInt(savedStep, 10) : 1;
     });
 
     // Initialize state from sessionStorage or empty object
     const [formData, setFormData] = useState(() => {
-        const savedData = sessionStorage.getItem('merchantFormData');
-        const initialData = savedData ? JSON.parse(savedData) : {
+        const savedData = secureStorage.getItem('merchantFormData');
+        const initialData = savedData ? savedData : {
             keuangan: {},
             dataPemilik: {},
             dataUsaha: {},
             profil: {},
             dataTransaksi: {},
-            konfigurasi: {},
+            dataTransaksi: {},
+            konfigurasi: {
+                jumlahTerminal: '1'
+            },
             dokumen: {}
         };
 
@@ -95,8 +98,8 @@ const MerchantForm = ({ userEmail, verifiedAccountData }) => {
         if (status === 'succeeded') {
             setShowSuccessModal(true);
             // Clear storage
-            sessionStorage.removeItem('merchantFormData');
-            sessionStorage.removeItem('merchantFormStep');
+            secureStorage.removeItem('merchantFormData');
+            secureStorage.removeItem('merchantFormStep');
             secureStorage.removeItem('onboardingStarted');
             secureStorage.removeItem('isEmailVerified');
             secureStorage.removeItem('isBankVerified');
@@ -155,12 +158,12 @@ const MerchantForm = ({ userEmail, verifiedAccountData }) => {
             return;
         }
 
-        sessionStorage.setItem('merchantFormData', JSON.stringify(formData));
+        secureStorage.setItem('merchantFormData', formData);
 
         if (currentStep < 7) {
             const nextStep = currentStep + 1;
             setCurrentStep(nextStep);
-            sessionStorage.setItem('merchantFormStep', nextStep);
+            secureStorage.setItem('merchantFormStep', nextStep);
         }
     };
 
@@ -172,7 +175,7 @@ const MerchantForm = ({ userEmail, verifiedAccountData }) => {
             merchant_data: {
                 // ... (Mapping remains mostly same, just ensuring correct field access) ...
                 // Email & Verification (from prop)
-                email: userEmail || sessionStorage.getItem('userEmail'),
+                email: userEmail || secureStorage.getItem('userEmail'),
                 email_verified: true,
 
                 // Data Pemilik (Step 1)
@@ -289,7 +292,7 @@ const MerchantForm = ({ userEmail, verifiedAccountData }) => {
     const handlePrev = () => {
         const prevStep = currentStep - 1;
         setCurrentStep(prevStep);
-        sessionStorage.setItem('merchantFormStep', prevStep);
+        secureStorage.setItem('merchantFormStep', prevStep);
     };
 
     return (
@@ -337,6 +340,8 @@ const MerchantForm = ({ userEmail, verifiedAccountData }) => {
                             data={formData.konfigurasi}
                             updateData={(d) => updateFormData('konfigurasi', d)}
                             dataPemilik={formData.dataPemilik}
+                            dataTransaksi={formData.dataTransaksi}
+                            dataUsaha={formData.dataUsaha}
                             errors={validationErrors}
                         />
                     ) : (

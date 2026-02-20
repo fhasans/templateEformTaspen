@@ -2,10 +2,10 @@ import React from 'react';
 import { FaIdCard, FaBriefcase, FaUser, FaStore, FaFileInvoice, FaCog, FaFileAlt } from 'react-icons/fa';
 
 const steps = [
-    { id: 1, icon: FaStore, label: 'Keuangan' },
+    { id: 1, icon: FaStore, label: 'Profil' },
     { id: 2, icon: FaIdCard, label: 'Data Pemilik' },
     { id: 3, icon: FaBriefcase, label: 'Data Usaha' },
-    { id: 4, icon: FaUser, label: 'Profil' },
+    { id: 4, icon: FaUser, label: 'Keuangan' },
     { id: 5, icon: FaFileInvoice, label: 'Data Transaksi' },
     { id: 6, icon: FaCog, label: 'Konfigurasi' },
     { id: 7, icon: FaFileAlt, label: 'Dokumen' },

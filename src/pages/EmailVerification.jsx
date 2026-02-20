@@ -8,6 +8,8 @@ const EmailVerification = ({ onVerified }) => {
     const { email, isOtpSent, isVerified, isLoading, error } = useSelector((state) => state.auth);
     const [otp, setOtp] = React.useState('');
 
+    const [localError, setLocalError] = React.useState('');
+
     // Trigger parent callback when verified
     useEffect(() => {
         if (isVerified) {
@@ -18,6 +20,7 @@ const EmailVerification = ({ onVerified }) => {
     // Clear errors on mount
     useEffect(() => {
         dispatch(clearError());
+        setLocalError('');
     }, [dispatch]);
 
     const validateEmail = (email) => {
@@ -25,14 +28,14 @@ const EmailVerification = ({ onVerified }) => {
     };
 
     const handleSendOtp = () => {
+        setLocalError('');
+
         if (!email) {
-            // We can treat local validation errors as Redux errors or keep local
-            // For simplicity, let's just use the Redux error state or alert
-            alert('Email harus diisi'); // Or dispatch a local error action if we added one
+            setLocalError('Email harus diisi');
             return;
         }
         if (!validateEmail(email)) {
-            alert('Format email tidak valid');
+            setLocalError('Format email tidak valid (contoh: nama@perusahaan.com)');
             return;
         }
         dispatch(sendOtp(email));
@@ -49,6 +52,7 @@ const EmailVerification = ({ onVerified }) => {
     const handleReset = () => {
         dispatch(resetAuth());
         setOtp('');
+        setLocalError('');
     };
 
     return (
@@ -74,12 +78,23 @@ const EmailVerification = ({ onVerified }) => {
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e) => dispatch(setEmail(e.target.value))}
+                                onChange={(e) => {
+                                    dispatch(setEmail(e.target.value));
+                                    if (localError) setLocalError('');
+                                }}
                                 placeholder="nama@perusahaan.com"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${localError || error
+                                        ? 'border-red-500 focus:ring-red-500'
+                                        : 'border-gray-300 focus:ring-[#1e3a8a]'
+                                    } transition-all`}
                             />
+                            {(localError || error) && (
+                                <p className="text-red-500 text-sm mt-1 animate-fade-in">
+                                    {localError || error}
+                                </p>
+                            )}
                         </div>
-                        {error && <p className="text-red-500 text-sm">{error}</p>}
+
                         <button
                             onClick={handleSendOtp}
                             disabled={isLoading}

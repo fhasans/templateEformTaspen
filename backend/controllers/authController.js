@@ -3,6 +3,13 @@ const nodemailer = require('nodemailer');
 
 // Helper to send email
 async function sendEmail(email, code) {
+    if (process.env.BYPASS_SMTP === 'true') {
+        console.log("⚠️ SMTP Bypassed. Email content below:");
+        console.log(`To: ${email}`);
+        console.log(`Code: ${code}`);
+        return true;
+    }
+
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.warn("⚠️ SMTP Credentials not found. Skipping real email send.");
         return false;

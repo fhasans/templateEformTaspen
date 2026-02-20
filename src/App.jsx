@@ -9,11 +9,11 @@ import { secureStorage } from './utils/secureStorage';
 function App() {
   // Initialize state from sessionStorage to persist across refreshes
   const [isStarted, setIsStarted] = useState(() => {
-    return sessionStorage.getItem('onboardingStarted') === 'true';
+    return secureStorage.getItem('onboardingStarted') === true;
   });
 
   const [isEmailVerified, setIsEmailVerified] = useState(() => {
-    return sessionStorage.getItem('isEmailVerified') === 'true';
+    return secureStorage.getItem('isEmailVerified') === true;
   });
 
   const handleStart = () => {

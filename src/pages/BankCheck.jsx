@@ -40,18 +40,18 @@ const BankCheck = ({ onVerified }) => {
         }
     };
 
-    // Step 1: Check Existence
-    const handleCheckExistence = () => {
+    // Unified Check Function (Single Step)
+    const handleCheck = () => {
         if (!accountNumber) {
             alert('Nomor rekening harus diisi');
             return;
         }
 
         setIsLoading(true);
-        setLoadingMessage("Mencari data rekening...");
+        setLoadingMessage("Memeriksa data rekening...");
         setError(null);
 
-        // Simulate API Search
+        // Simulate API Search & Status Check combined
         setTimeout(() => {
             const account = DUMMY_ACCOUNTS[accountNumber];
 
@@ -60,45 +60,35 @@ const BankCheck = ({ onVerified }) => {
                 setError('not_found');
                 setIsLoading(false);
             } else {
-                // Found -> Show Check Status Button
-                setIsAccountFound(true);
-                setVerifiedAccount(account);
-                setIsLoading(false);
+                // Found -> Check Status
+                if (account.status === 'active') {
+                    // Active -> Success -> Progress -> Redirect
+                    setVerifiedAccount(account); // Set account for display
+                    setLocalIsSuccess(true);
+
+                    const finalData = { ...account, nomorRekening: accountNumber };
+
+                    // Progress animation
+                    let currentProgress = 0;
+                    const interval = setInterval(() => {
+                        currentProgress += 5;
+                        setProgress(currentProgress);
+                        if (currentProgress >= 100) {
+                            clearInterval(interval);
+                            onVerified(finalData);
+                        }
+                    }, 50);
+                } else {
+                    // Inactive -> Popup
+                    setError('inactive');
+                    setIsLoading(false);
+                }
             }
-        }, 1000);
-    };
-
-    // Step 2: Check Status (Active/Inactive)
-    const handleCheckStatus = () => {
-        setIsLoading(true);
-        setLoadingMessage("Memeriksa status keaktifan rekening...");
-
-        setTimeout(() => {
-            if (verifiedAccount && verifiedAccount.status === 'active') {
-                // Active -> Success -> Redirect
-                setLocalIsSuccess(true);
-                const finalData = { ...verifiedAccount, nomorRekening: accountNumber };
-
-                // Progress animation
-                let currentProgress = 0;
-                const interval = setInterval(() => {
-                    currentProgress += 5;
-                    setProgress(currentProgress);
-                    if (currentProgress >= 100) {
-                        clearInterval(interval);
-                        onVerified(finalData);
-                    }
-                }, 50);
-            } else {
-                // Inactive -> Popup
-                setError('inactive');
-                setIsLoading(false);
-            }
-        }, 1000);
+        }, 1500); // Slightly longer simulated delay for "full check"
     };
 
     const handleReset = () => {
-        setIsAccountFound(false);
+        // setIsAccountFound(false); // REMOVED
         setVerifiedAccount(null);
         setAccountNumber('');
         setError(null);
@@ -129,10 +119,10 @@ const BankCheck = ({ onVerified }) => {
                             value={accountNumber}
                             onChange={(e) => {
                                 setAccountNumber(e.target.value.replace(/[^0-9]/g, ''));
-                                if (isAccountFound) {
-                                    setIsAccountFound(false); // Reset if user changes types
-                                    setVerifiedAccount(null);
-                                }
+                                // if (isAccountFound) { // REMOVED
+                                //     setIsAccountFound(false); // Reset if user changes types
+                                //     setVerifiedAccount(null);
+                                // }
                             }}
                             disabled={isLoading || localIsSuccess}
                             placeholder="Contoh: 1234567890"
@@ -145,8 +135,8 @@ const BankCheck = ({ onVerified }) => {
                         )}
                     </div>
 
-                    {/* Display Found Account Name */}
-                    {isAccountFound && verifiedAccount && (
+                    {/* Display Found Account Name (Only on Success/Progress) */}
+                    {localIsSuccess && verifiedAccount && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2 animate-fade-in">
                             <p className="text-sm text-gray-500 mb-1">Nama Pemilik Rekening:</p>
                             <p className="text-lg font-bold text-[#1e3a8a]">{verifiedAccount.nama}</p>
@@ -162,18 +152,16 @@ const BankCheck = ({ onVerified }) => {
                         </div>
                     ) : (
                         <button
-                            onClick={isAccountFound ? handleCheckStatus : handleCheckExistence}
+                            onClick={handleCheck}
                             disabled={isLoading}
                             className={`w-full text-white font-bold py-3 rounded-lg shadow transition flex items-center justify-center gap-2 ${isLoading
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : isAccountFound
-                                    ? 'bg-green-600 hover:bg-green-700' // Different color for step 2
+                                    ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-[#1e3a8a] hover:bg-blue-800'
                                 }`}
                         >
                             {isLoading ? loadingMessage : (
                                 <>
-                                    {isAccountFound ? 'Cek Status Rekening' : 'Cek Rekening'} <FaSearch />
+                                    Cek Rekening <FaSearch />
                                 </>
                             )}
                         </button>

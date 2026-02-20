@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import FormSection from '../components/FormSection';
 import Input from '../components/Input';
 import Select from '../components/Select';
+import { API_BASE_URL } from '../config/api';
 
 const RadioGroup = ({ label, name, options, required, value, onChange, className }) => (
     <div className={`mb-4 ${className}`}>
@@ -64,18 +65,76 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
         updateData({ [field]: value });
     };
 
+    // State for Jenis Usaha API
+    const [jenisUsahaOptions, setJenisUsahaOptions] = useState([]);
+    const [loadingJenisUsaha, setLoadingJenisUsaha] = useState(false);
+
+    // State for Tipe Bisnis API
+    const [tipeBisnisOptions, setTipeBisnisOptions] = useState([]);
+    const [loadingTipeBisnis, setLoadingTipeBisnis] = useState(false);
+
+    // Fetch start
+    useEffect(() => {
+        const fetchJenisUsaha = async () => {
+            setLoadingJenisUsaha(true);
+            try {
+                const response = await fetch(`${API_BASE_URL}/jenis-usaha`);
+                if (!response.ok) throw new Error('Failed to fetch jenis usaha');
+                const result = await response.json();
+
+                // Map API result to options
+                // Value = MCC (as requested), Label = JENIS_USAHA
+                const options = result.map(item => ({
+                    value: item.MCC.toString(), // Store MCC as value
+                    label: `${item.JENIS_USAHA} (${item.MCC})`,
+                    group: item.GROUP_USAHA,
+                    deskripsi: item.DESKRIPSI,
+                    keyword1: item.KEYWORD1,
+                    keyword2: item.KEYWORD2,
+                    keyword3: item.KEYWORD3
+                }));
+                setJenisUsahaOptions(options);
+            } catch (err) {
+                console.error("Error fetching jenis usaha:", err);
+            } finally {
+                setLoadingJenisUsaha(false);
+            }
+        };
+
+        const fetchTipeBisnis = async () => {
+            setLoadingTipeBisnis(true);
+            try {
+                const response = await fetch(`${API_BASE_URL}/tipe-bisnis`);
+                if (!response.ok) throw new Error('Failed to fetch tipe bisnis');
+                const result = await response.json();
+
+                const options = result.map(item => ({
+                    value: item.ID.toString(),
+                    label: item.TIPE_BISNIS
+                }));
+                setTipeBisnisOptions(options);
+            } catch (err) {
+                console.error("Error fetching tipe bisnis:", err);
+            } finally {
+                setLoadingTipeBisnis(false);
+            }
+        };
+
+        fetchJenisUsaha();
+        fetchTipeBisnis();
+    }, []);
+
     // Initialize defaults based on FSD logic
     React.useEffect(() => {
         const defaults = {
-            jenisUsaha: 'rumah_makan',
+            // jenisUsaha: 'rumah_makan', // Removed static default
             provinsiUsaha: 'dki_jakarta',
             kabKotaUsaha: 'jakarta_selatan',
             kecamatanUsaha: 'setiabudi',
             kelurahanUsaha: 'karet_semanggi',
             kodePosUsaha: '12930',
-            // bentukUsaha logic is handled in subsequent effect, but default safe value:
             bentukUsaha: data.tipeNasabah === 'perorangan' ? 'perorangan' : 'pt',
-            tipeBisnis: 'retail'
+            // tipeBisnis: 'retail' // Removed static default
         };
 
         const updates = {};
@@ -99,6 +158,17 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
         }
     }, [data.tipeNasabah]);
 
+    // Handle Chip Click
+    const handleChipClick = (mcc) => {
+        // Find option by MCC
+        // Since we are using Select component which takes value, we just update data.jenisUsaha
+        updateData({ jenisUsaha: mcc });
+
+        // Also auto-fill MCC in Step 6?
+        // We can't access Step 6 data here directly easily without lifting state further up or dispatching.
+        // For now, let's just assume Step 2 stores it.
+    };
+
     return (
         <div>
             {/* Informasi Merchant */}
@@ -107,13 +177,12 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                     <Select
                         label="Jenis Usaha"
                         required={true}
-                        options={[
-                            { value: 'rumah_makan', label: 'Rumah Makan' },
-                            { value: 'toko_kelontong', label: 'Toko Kelontong' },
-                        ]}
+                        options={jenisUsahaOptions}
                         value={data.jenisUsaha || ''}
                         onChange={(e) => handleChange('jenisUsaha', e.target.value)}
                         error={errors.jenisUsaha}
+                        disabled={loadingJenisUsaha}
+                        placeholder={loadingJenisUsaha ? "Loading..." : "Pilih Jenis Usaha"}
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -134,20 +203,47 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                             onChange={(e) => handleChange('namaMerchantQR', e.target.value)}
                             error={errors.namaMerchantQR}
                         />
-                        {/* Suggest Keywords */}
-                        <div className="mt-2 text-sm text-gray-600 flex gap-2 items-center flex-wrap">
-                            <span className="font-semibold text-green-600 italic">suggest:</span>
-                            {['Warung', 'Restaurant', 'Rumah Makan'].map(keyword => (
-                                <button
-                                    key={keyword}
-                                    type="button"
-                                    onClick={() => handleChange('namaMerchantQR', keyword + ' ')}
-                                    className="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded border border-gray-300 transition-colors"
-                                >
-                                    {keyword}
-                                </button>
-                            ))}
-                        </div>
+                        {/* Suggest Keywords for Name based on selected Jenis Usaha (MCC) */}
+                        {data.jenisUsaha && (
+                            <div className="mt-2 text-sm text-gray-600 flex gap-2 items-center flex-wrap">
+                                <span className="font-semibold text-green-600 italic">suggest:</span>
+                                {(() => {
+                                    const selectedOption = jenisUsahaOptions.find(opt => opt.value === data.jenisUsaha);
+                                    if (!selectedOption) return null;
+
+                                    // Extract keywords from the option object (assuming we stored them in logic below)
+                                    // We need to update the mapping logic in useEffect first to include these keywords
+                                    // Checking if options have keywords... 
+                                    const keywords = [
+                                        selectedOption.keyword1,
+                                        selectedOption.keyword2,
+                                        selectedOption.keyword3
+                                    ].filter(k => k); // Filter out null/undefined/empty
+
+                                    if (keywords.length === 0) return <span className="text-gray-400 text-xs">-</span>;
+
+                                    return keywords.map((keyword, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => {
+                                                // Prepend or Append? User likely wants to use it as part of the name.
+                                                // Example: "Warung" -> "Warung [Existing Name]" or "[Existing Name] Warung"?
+                                                // Usually prefix. "Warung Bu Budi".
+                                                // Or just Replace? 
+                                                // Let's Append if not empty, else Set.
+                                                const currentVal = data.namaMerchantQR || '';
+                                                const newVal = currentVal ? `${keyword} ${currentVal}` : `${keyword} `;
+                                                handleChange('namaMerchantQR', newVal);
+                                            }}
+                                            className="bg-green-50 hover:bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 transition-colors text-xs"
+                                        >
+                                            {keyword}
+                                        </button>
+                                    ));
+                                })()}
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -345,11 +441,11 @@ const Step2DataUsaha = ({ data = {}, updateData, errors = {} }) => {
                     <Select
                         label="Tipe Bisnis"
                         required={true}
-                        options={[
-                            { value: 'retail', label: 'Retail' },
-                        ]}
-                        value={data.tipeBisnis || 'retail'}
+                        options={tipeBisnisOptions}
+                        value={data.tipeBisnis || ''}
                         onChange={(e) => handleChange('tipeBisnis', e.target.value)}
+                        disabled={loadingTipeBisnis}
+                        placeholder={loadingTipeBisnis ? "Loading..." : "Pilih Tipe Bisnis"}
                     />
                     <Input
                         label="Luas Tempat Usaha (m2)"
